@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>成語神話卷軸 RPG</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f3e2b8;--card:#fff8e1;--ink:#4a2c10;--line:#a9742f;--red:#b3261e}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#2a1b0c;--card:#3d2a14;--ink:#f6e3b4;--line:#c99444}}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Serif TC","PingFang TC","Microsoft JhengHei",serif;font-size:20px;min-height:100vh}
+.card{background:var(--card);border:4px double var(--line);border-radius:16px}
+.btn{background:linear-gradient(#e0a43a,#b7721c);color:#fff;border:3px solid #6d3d0c;border-radius:14px;padding:10px 20px;font-weight:700;font-size:22px;cursor:pointer;text-shadow:0 1px 2px #0006}
+.btn:active{transform:scale(.96)}
+.tab{border:3px solid var(--line);border-radius:12px;padding:6px 12px;background:var(--card);cursor:pointer;font-weight:700;white-space:nowrap}
+.tab.on{background:#b7721c;color:#fff}
+.map{overflow-x:auto;padding:30px 20px;background:repeating-linear-gradient(90deg,#0000 0 80px,#a9742f14 80px 82px)}
+.row{display:flex;align-items:center;width:max-content}
+.seg{width:34px;height:0;border-top:5px dashed var(--line)}
+.node{width:64px;height:64px;border-radius:50%;border:4px solid #6d3d0c;background:#ffe9a8;color:#4a2c10;font-weight:800;font-size:24px;cursor:pointer;flex:none}
+.node.boss{width:84px;height:84px;background:#f5a09a;border-color:#7a1410;font-size:34px}
+.node.done{background:#9bd98a}.node.lock{background:#bbb;color:#777;cursor:not-allowed}
+.node.cur{animation:pulse 1s infinite alternate}
+.opt{display:block;width:100%;text-align:center;font-size:32px;font-weight:800;padding:14px;margin:8px 0;border:4px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);cursor:pointer}
+.opt.ok{background:#8fd694;color:#123}.opt.no{background:#f19b95;color:#123}
+.shake{animation:shake .45s}.hit{animation:hit .5s}
+.bar{height:22px;border-radius:11px;background:#0003;overflow:hidden;border:2px solid #6d3d0c}
+.bar>div{height:100%;background:linear-gradient(#ff6b5e,#c42a1d);transition:width .6s}
+.cap{animation:cap 1.6s forwards}.glow{animation:glow 1.4s infinite alternate}
+.cert{background:linear-gradient(135deg,#fff3c4,#f2c14e);border:10px double #a8741a;color:#5a3405}
+@keyframes pulse{to{transform:scale(1.18);box-shadow:0 0 18px #ffb300}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-14px)}40%{transform:translateX(12px)}60%{transform:translateX(-8px)}80%{transform:translateX(6px)}}
+@keyframes hit{0%{filter:brightness(3);transform:scale(1.2) rotate(8deg)}100%{filter:none;transform:none}}
+@keyframes cap{0%{transform:scale(1)}60%{transform:scale(.3) rotate(540deg)}100%{transform:scale(0) translateY(-80px)}}
+@keyframes glow{to{filter:drop-shadow(0 0 20px gold);transform:scale(1.12)}}
+#lobby{position:fixed;inset:0;z-index:50;overflow:hidden;background:#0b1030}
+.world{position:relative;width:min(100vw,177.78vh);aspect-ratio:16/9}
+.pin{position:absolute;transform:translate(-50%,-50%)}
+.tag{animation:floaty 3s ease-in-out infinite alternate;background:#0b1030d9;color:#fff;border:3px solid #7de3ff;border-radius:14px;padding:6px 12px;box-shadow:0 0 18px #7de3ff;cursor:pointer;text-align:center;font-size:clamp(14px,1.6vw,22px);white-space:nowrap;font-family:inherit}
+.tag.got{border-color:gold;box-shadow:0 0 24px gold}
+.tag:hover{transform:scale(1.1)}
+@keyframes floaty{to{transform:translateY(-10px)}}
+
+.hidden{display:none!important}
+#scene{position:fixed;inset:0;z-index:50;overflow:hidden;background:#0b1030}
+.scn{position:relative;width:100%;height:100%;background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center}
+#modal{position:fixed;inset:0;z-index:100}
+.spk{background:#2a8fbd;color:#fff;border:3px solid #15506b;border-radius:12px;padding:4px 12px;font-size:20px;font-weight:700;cursor:pointer;font-family:inherit}
+.hbtn{border:5px solid transparent;border-radius:16px;background:#0001;padding:8px;cursor:pointer;color:inherit;font-family:inherit}
+.hbtn.on{border-color:#e0a43a;background:#ffe9a8;color:#4a2c10}
+.lab{background:var(--card);color:var(--ink);padding:0 8px;border-radius:8px;font-size:14px;display:inline-block;margin-top:2px}
+</style>
+</head>
+<body>
+<div id="lobby" class="hidden"></div>
+<div id="scene" class="hidden"></div>
+<div id="modal" class="hidden"></div>
+<div id="main" class="max-w-4xl mx-auto p-3 hidden">
+  <div class="flex items-center justify-between gap-2 mb-2">
+    <h1 class="text-2xl md:text-3xl font-black">📜 成語神話卷軸</h1>
+    <div class="flex gap-2"><button class="tab" onclick="settings()">⚙ 設定</button><button class="tab" onclick="finale(true)">🧪 測試大結局</button></div>
+  </div>
+  <div id="app"></div>
+</div>
+<script>
+/* ============ 設定區（可自行修改）============
+ 背景音樂：把 mp3 放進 audio/ 資料夾，再把檔名填在下面；留空 "" 代表不播放。
+ 可用鍵：lobby(世界地圖) story(故事) map(各島地圖) battle(戰鬥) boss(魔王戰) ending(結局)
+ 也可替單一島嶼指定：island1 ~ island6（優先於 map）。例：lobby:"lobby.mp3" */
+const BGM={lobby:"",story:"",map:"",battle:"",boss:"",ending:""};
+const BGM_DIR="audio/";
+
+/* ============ 題庫 idiomDatabase ============
+ 格式：[成語, 白話解釋, 趣味造句]
+ ★未來可在此繼續貼上擴充題庫：直接在各島陣列最後加一行即可（成語須為四字）。
+ 挖空與 4 個選項由程式自動產生（干擾字取自同島其他成語）。 */
+const idiomDatabase = {
+island1:[
+["一心一意","心思專一，沒有雜念","小猴一心一意剝香蕉，連蝴蝶飛過都沒看見。"],
+["三心二意","猶豫不定，不專心","寫功課三心二意，一下玩橡皮擦一下看窗外。"],
+["七上八下","心裡不安，忐忑不定","等成績單發下來，我的心七上八下。"],
+["五花八門","種類繁多，變化多端","花果山的野果五花八門，看得猴子眼花。"],
+["十全十美","完美無缺","世上沒有十全十美的香蕉，總有一點黑斑。"],
+["千變萬化","變化非常多","天上的雲千變萬化，一下像龍一下像羊。"],
+["萬紫千紅","花朵色彩繽紛","春天一到，花果山萬紫千紅美極了。"],
+["四面八方","各個方向、各處","鈴聲一響，同學從四面八方跑回教室。"],
+["自言自語","自己對自己說話","小猴蹲在樹下自言自語，數著有幾顆桃子。"],
+["小心翼翼","非常謹慎，不敢大意","我小心翼翼捧著露珠，怕它掉下來。"],
+["目瞪口呆","驚訝得說不出話","看到猴王翻了十個筋斗，大家目瞪口呆。"],
+["大驚小怪","對平常的事過分驚訝","只是一隻小蟲，你別大驚小怪。"],
+["笑逐顏開","笑得很開心","吃到甜甜的蟠桃，小猴笑逐顏開。"],
+["一模一樣","完全相同","兩顆桃子一模一樣，分不出哪顆大。"],
+["半途而廢","做到一半就放棄","爬山不能半途而廢，山頂的風景最美。"]],
+island2:[
+["守株待兔","不努力，只想靠運氣","天天守株待兔，是撿不到大珍珠的。"],
+["畫蛇添足","多此一舉，反而弄壞","他畫完龍又加四隻腳，真是畫蛇添足。"],
+["亡羊補牢","出錯後趕快補救","龍宮網破了才修，還算亡羊補牢。"],
+["葉公好龍","嘴上說喜歡，其實害怕","他說愛海洋卻怕水，簡直葉公好龍。"],
+["井底之蛙","眼光狹小，見識不廣","別當井底之蛙，快出去看看大海。"],
+["掩耳盜鈴","自己騙自己","蓋住成績單就沒事？這是掩耳盜鈴。"],
+["狐假虎威","借別人的勢力嚇人","小蝦仗著龍王的名嚇人，真是狐假虎威。"],
+["對牛彈琴","對不懂的人講道理","跟貝殼談數學，等於對牛彈琴。"],
+["鶴立雞群","才能或外表特別突出","小金龍站在蝦兵中，真是鶴立雞群。"],
+["刻舟求劍","不知變通，固執守舊","船都開走了還在原地找，真是刻舟求劍。"],
+["自相矛盾","前後說法互相衝突","你說不怕水又不敢下海，自相矛盾。"],
+["杯弓蛇影","疑神疑鬼，自己嚇自己","海草搖一搖，他就以為是怪物，杯弓蛇影。"],
+["揠苗助長","急著求成，反而壞事","天天拔高海草，那是揠苗助長。"],
+["騎虎難下","事情進行到一半，難以停止","話說太滿，現在只好騎虎難下。"],
+["雪中送炭","在別人最需要時幫助","寒冷的夜裡，珊瑚送來暖被，真是雪中送炭。"]],
+island3:[
+["愚公移山","只要有毅力，大事也能完成","他像愚公移山，天天練習終於學會游泳。"],
+["精衛填海","意志堅定，不怕困難","她精衛填海般地收集資料，終於完成報告。"],
+["鐵杵成針","只要肯下功夫，事情就能成功","鐵杵成針的故事鼓勵我們不要放棄。"],
+["囊螢映雪","在艱苦環境中仍努力讀書","古人囊螢映雪苦讀，我們更該珍惜書桌。"],
+["懸樑刺股","刻苦用功讀書","他懸樑刺股準備比賽，睡覺都在背詞。"],
+["臥薪嚐膽","刻苦自勵，立志雪恥","輸掉比賽後，他臥薪嚐膽努力練球。"],
+["破釜沉舟","下定決心，不留退路","最後一關，我破釜沉舟全力一搏。"],
+["百折不撓","遭遇多次挫折也不屈服","火鳳凰百折不撓，一次次從火中重生。"],
+["持之以恆","長久堅持不間斷","持之以恆地閱讀，作文就會愈寫愈好。"],
+["勤能補拙","勤勞可以彌補不足","慢也不怕，勤能補拙最重要。"],
+["聞雞起舞","把握時間，奮發向上","他聞雞起舞，天一亮就開始練字。"],
+["韋編三絕","讀書勤奮，翻到書繩斷了","孔子讀易經韋編三絕，用功得令人佩服。"],
+["水滴石穿","小力量持續也能成大事","每天寫一頁，水滴石穿，字愈寫愈漂亮。"],
+["馬到成功","事情很快順利完成","祝你比賽馬到成功，旗開得勝！"],
+["全力以赴","用盡全部力量去做","火焰山試煉最後一關，我全力以赴。"]],
+island4:[
+["畫龍點睛","在關鍵處加一筆，使作品生動","最後那句結尾畫龍點睛，整篇作文都活了。"],
+["完璧歸趙","把東西完好歸還原主","他把借來的書完璧歸趙，連書皮都沒折。"],
+["負荊請罪","主動認錯道歉","弄壞玩具後，他向朋友負荊請罪。"],
+["草木皆兵","極度驚慌，疑神疑鬼","迷霧林裡風聲一響，他就草木皆兵。"],
+["紙上談兵","只會空談，不能實行","光看書不練習，只是紙上談兵。"],
+["望梅止渴","用空想安慰自己","看著糖果圖片解饞，真是望梅止渴。"],
+["三顧茅廬","誠心誠意再三邀請","他三顧茅廬，終於請到仙狐當老師。"],
+["手不釋卷","書不離手，勤奮好學","她手不釋卷，連搭車都在看故事書。"],
+["一鳴驚人","平時默默無聞，一做就震驚大家","他在比賽中一鳴驚人，奪得第一名。"],
+["指鹿為馬","故意顛倒是非","明明是鹿卻說是馬，簡直指鹿為馬。"],
+["毛遂自薦","主動推薦自己","班級演講比賽，他毛遂自薦當代表。"],
+["四面楚歌","四周都是敵人，孤立無援","對手團團圍住，他陷入四面楚歌。"],
+["乘風破浪","勇往直前，不怕困難","小船乘風破浪，駛向遠方的青丘。"],
+["如魚得水","處在適合自己的環境","他一到球場，就如魚得水。"],
+["一諾千金","說話算話，信用很高","他一諾千金，答應的事一定做到。"]],
+island5:[
+["胸有成竹","做事前已有把握","小仙子胸有成竹，上台報告一點也不緊張。"],
+["不恥下問","不以向地位低的人請教為恥","他不恥下問，向學弟請教電腦技巧。"],
+["見賢思齊","看到賢者想向他看齊","見賢思齊，我也要像麒麟一樣守信。"],
+["集思廣益","集合眾人智慧，得到更好結果","大家集思廣益，想出最棒的園遊會點子。"],
+["虛懷若谷","心胸像山谷般謙虛","他得了冠軍仍虛懷若谷。"],
+["防微杜漸","在壞事剛開始時就制止","防微杜漸，小錯別放過才不會變大。"],
+["未雨綢繆","事先做好準備","出門前帶雨傘，是未雨綢繆。"],
+["居安思危","平安時想到可能的危險","平常就演練逃生，是居安思危。"],
+["鍥而不捨","有恆心，不輕易放棄","鍥而不捨地練習，終於學會騎車。"],
+["融會貫通","把各方面知識整合明白","他把各單元融會貫通，考試輕鬆過關。"],
+["舉一反三","從一件事推知許多事","老師教一題，他就能舉一反三。"],
+["循序漸進","按照步驟，一步步前進","學習要循序漸進，不能一步登天。"],
+["觸類旁通","懂得一件事後推知同類事","學會加法，乘法也觸類旁通。"],
+["溫故知新","複習舊知識得到新體會","溫故知新，重讀課文有新發現。"],
+["學以致用","把學到的知識拿來運用","我把學到的急救常識學以致用。"]],
+island6:[
+["曲高和寡","作品太深，懂的人少","他的詩曲高和寡，只有幾位老師欣賞。"],
+["蕩氣迴腸","文章或音樂十分感人","這首樂曲蕩氣迴腸，讓人久久難忘。"],
+["相得益彰","兩者互相襯托，更顯出色","紅花綠葉相得益彰，畫面更美。"],
+["莫衷一是","意見分歧，不知哪個對","大家各說各話，莫衷一是。"],
+["汗牛充棟","書籍非常多","天宮藏書汗牛充棟，一輩子也讀不完。"],
+["繁文縟節","過於繁瑣的禮節或手續","辦手續繁文縟節，讓人頭昏眼花。"],
+["淋漓盡致","表達得非常充分透徹","這篇文章把雨景描寫得淋漓盡致。"],
+["脫穎而出","才能顯露出來，超過眾人","他在眾多選手中脫穎而出。"],
+["洋洋灑灑","文章篇幅很長、氣勢盛大","他洋洋灑灑寫了五頁遊記。"],
+["鞭辟入裡","分析深入透徹","老師的講解鞭辟入裡，大家恍然大悟。"],
+["大相逕庭","彼此差距很大","兩人的想法大相逕庭，爭論不休。"],
+["瞠目結舌","驚訝得說不出話","大聖七十二變，讓妖怪瞠目結舌。"],
+["蔚然成風","某種風氣逐漸盛行","班上閱讀的習慣已蔚然成風。"],
+["栩栩如生","畫或雕刻像真的一樣","壁畫上的神龍栩栩如生。"],
+["返璞歸真","回復純樸自然","他放下手機，過著返璞歸真的生活。"]]
+};
+
+
+/* ============ 世界觀與故事 ============ */
+const ISLANDS=[
+{n:"花果初醒島",b:"偷桃靈猴精",r:"芭蕉扇葉",t:"偷桃靈猴精偷走了花果山的成語蟠桃，島上的成語全都亂了套！"},
+{n:"龍宮尋寶灣",b:"吐墨海夜叉",r:"定海神針",t:"章魚靈吐出黑墨，把龍宮裡的成語寶藏都染黑了！"},
+{n:"火焰山試煉谷",b:"三昧小牛魔",r:"避火罩",t:"三昧小牛魔放火燒山，把成語燒成了一團焦黑的亂碼！"},
+{n:"青丘迷霧林",b:"幻術九尾小狐妖",r:"照妖鏡",t:"九尾小狐妖用幻術讓成語變了樣，大家都分不清真假！"},
+{n:"崑崙雲海巔",b:"吞字小饕餮",r:"軒轅劍",t:"吞字小饕餮把成語裡的字一個個吃掉，只剩下空格！"},
+{n:"凌霄終極殿",b:"混沌心魔大聖",r:"鳳翅紫金冠",t:"混沌心魔大聖佔領了終極殿，只有集齊法寶才能挑戰他！"}];
+// 故事格式：[圖示, 文字, 背景圖(可省略)]；{n} 會換成玩家名字
+const STORY=[
+["📖","國語課上，{n}翻開課本。咦？書頁上有一個發光的神祕字，正在字裡行間跑來跑去！"],
+["✨","{n}好奇地伸出手指，輕輕一點——「嗖！」光芒一閃，{n}被吸進書裡，掉進了成語世界！"],
+["🌏","成語世界的精靈急急忙忙地說：「妖怪們攻擊了這裡，成語世界裂成了六座仙島！」","images/world_map.jpg"],
+["😵","人類世界也亂成一團：有人把「畫蛇添足」當成幫蛇穿鞋子，大家都在亂用成語！","images/world_map.jpg"],
+["⚔️","只有學會島上的成語、打敗六位妖怪、蒐集六件法寶，才能讓成語世界恢復正常，{n}也才能回到教室。出發吧，{n}！","images/world_map.jpg"]];
+const ENDING=[
+["🌈","六件法寶一起發出金光，分裂的島嶼慢慢合在一起，成語世界恢復正常了！人類世界的大家也都學會正確使用成語。","images/islands/island6.jpg"],
+["🏫","光芒一閃，{n}回到了教室。課本上的神祕字變成一朵小花，安靜地睡在書頁裡。謝謝你，成語大聖{n}！"]];
+
+/* ============ 基本工具 ============ */
+const KEY="idiomMythRPG_v1",$=s=>document.querySelector(s);
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const DEF={cleared:[0,0,0,0,0,0],wrong:[[],[],[],[],[],[]],relics:[0,0,0,0,0,0],name:"",hero:"",set:{auto:true,music:true,vol:.5}};
+let S;try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+S=Object.assign(JSON.parse(JSON.stringify(DEF)),S||{});S.set=Object.assign({},DEF.set,S.set);
+let cur=0,B=null;
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const db=i=>idiomDatabase["island"+(i+1)],isBoss=l=>l%5===0;
+const nm=()=>S.name||"小勇者",hs=()=>`images/chars/${S.hero||"boy"}.webp`;
+const rs=i=>`images/relics/relic${i+1}.webp`,bs=i=>`images/monsters/boss${i+1}.webp`;
+
+/* ============ 背景音樂 ============ */
+const au=new Audio();au.loop=true;let want="";
+function bgm(k,fb){want=BGM[k]||BGM[fb]||"";sync()}
+function sync(){au.volume=S.set.vol;if(!want||!S.set.music){au.pause();return}
+  if(!decodeURI(au.src).endsWith(BGM_DIR+want))au.src=BGM_DIR+want;au.play().catch(()=>{})}
+addEventListener("click",()=>{if(want&&S.set.music&&au.paused)sync()});
+
+/* ============ 語音朗讀（瀏覽器內建中文語音）============ */
+const TTS="speechSynthesis" in window;let voice;
+function pickVoice(){const v=speechSynthesis.getVoices();voice=v.find(x=>/zh[-_]TW/i.test(x.lang))||v.find(x=>/zh/i.test(x.lang))}
+if(TTS){speechSynthesis.onvoiceschanged=pickVoice;pickVoice()}
+function say(t){if(!TTS||!t)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t.replace(/＿/g,"空格"));u.lang="zh-TW";if(voice)u.voice=voice;u.rate=.85;speechSynthesis.speak(u)}
+const auto=t=>{if(S.set.auto)say(t)};
+function stopSay(){if(TTS)speechSynthesis.cancel()}
+let TXT="";const spk=(l)=>TTS?`<button class="spk" onclick="say(TXT)">🔊 ${l||"聽一聽"}</button>`:"";
+function view(v){stopSay();["lobby","scene","main"].forEach(x=>$("#"+x).classList.toggle("hidden",x!==v))}
+
+/* ============ 角色選擇 ============ */
+let tmpHero="";
+function pickHero(){
+  view("scene");bgm("story","lobby");tmpHero=S.hero||"";TXT="選擇你的角色，再輸入你的名字吧！";
+  $("#scene").innerHTML=`<div class="scn" style="background-image:linear-gradient(#0007,#000a),url(images/world_map.jpg)"><div class="card p-4 text-center" style="max-width:640px;width:94%">
+  <h2 class="text-2xl font-black">選擇你的角色</h2>
+  <div class="flex gap-3 justify-center my-3">`+[["boy","小書生"],["girl","小仙女"]].map(([k,t])=>`<button id="h_${k}" class="hbtn ${tmpHero===k?"on":""}" onclick="chooseHero('${k}')"><img src="images/chars/${k}.webp" style="height:min(30vh,220px)" alt="${t}"><div class="font-black text-xl">${t}</div></button>`).join("")+`</div>
+  <label>你的名字：<input id="nmi" maxlength="8" value="${S.name}" class="border-4 rounded-xl p-2 text-center text-2xl" style="border-color:var(--line);color:#4a2c10;background:#fff;width:180px"></label>
+  <div id="msg" class="font-bold" style="color:var(--red);min-height:28px"></div>
+  <div>${spk("聽說明")} <button class="btn" onclick="confirmHero()">出發！</button></div></div></div>`;
+  auto(TXT);
+}
+function chooseHero(k){tmpHero=k;["boy","girl"].forEach(x=>$("#h_"+x).classList.toggle("on",x===k))}
+function confirmHero(){
+  const n=$("#nmi").value.trim();
+  if(!tmpHero)return $("#msg").textContent="請先選一個角色喔！";
+  if(!n)return $("#msg").textContent="請輸入你的名字喔！";
+  const first=!S.hero;S.hero=tmpHero;S.name=n;save();first?playStory(STORY,lobby):lobby();
+}
+
+/* ============ 故事播放 ============ */
+let ST;
+function playStory(list,done,i){ST={list,done,i:i||0};drawStory()}
+function stepStory(d){ST.i+=d;if(ST.i>=ST.list.length)return ST.done();drawStory()}
+function drawStory(){
+  const s=ST.list[ST.i],t=s[1].replace(/\{n\}/g,nm()),last=ST.i===ST.list.length-1;
+  view("scene");bgm("story","lobby");TXT=t;
+  $("#scene").innerHTML=`<div class="scn" style="background-image:linear-gradient(#0006,#000b),url(${s[2]||"images/world_map.jpg"})">
+  <img src="${hs()}" style="position:absolute;left:3%;bottom:36%;height:min(36vh,320px)" alt="">
+  <div class="card p-4" style="position:absolute;left:3%;right:3%;bottom:3%"><div class="text-4xl">${s[0]}</div>
+  <p class="text-xl md:text-2xl my-2" style="line-height:1.7">${t}</p>
+  <div class="flex gap-2 flex-wrap items-center">${spk("重聽")}${ST.i>0?'<button class="tab" onclick="stepStory(-1)">◀ 上一頁</button>':""}
+  <button class="btn" onclick="stepStory(1)">${last?"繼續 ▶":"下一頁 ▶"}</button>${last?"":'<button class="tab" onclick="ST.done()">略過</button>'}
+  <span class="text-base">${ST.i+1}/${ST.list.length}</span></div></div></div>`;
+  auto(t);
+}
+
+/* ============ 設定視窗 ============ */
+function settings(){
+  const m=$("#modal"),row=(id,l,on)=>`<label class="flex justify-between items-center py-2"><span>${l}</span><input type="checkbox" id="${id}" ${on?"checked":""} style="width:28px;height:28px"></label>`;
+  m.classList.remove("hidden");
+  m.innerHTML=`<div class="flex items-center justify-center w-full h-full" style="background:#000a"><div class="card p-4" style="max-width:420px;width:92%"><h2 class="text-2xl font-black mb-2">⚙ 設定</h2>
+  ${row("s_auto","🔊 自動朗讀題目與故事",S.set.auto)}${row("s_mus","🎵 背景音樂",S.set.music)}
+  <label class="block py-2">音量 <input type="range" id="s_vol" min="0" max="1" step=".05" value="${S.set.vol}" class="w-full"></label>
+  <div class="flex flex-col gap-2 mt-2"><button class="tab" onclick="closeSet();pickHero()">🧑 更換角色／名字</button>
+  <button class="tab" onclick="closeSet();playStory(STORY,lobby)">📖 重看開場故事</button>
+  <button class="tab" id="rs_b" onclick="resetAll()">🗑 清除全部進度</button></div>
+  <div class="text-center mt-3"><button class="btn" onclick="closeSet()">完成</button></div></div></div>`;
+  $("#s_auto").onchange=e=>{S.set.auto=e.target.checked;save();if(!S.set.auto)stopSay()};
+  $("#s_mus").onchange=e=>{S.set.music=e.target.checked;save();sync()};
+  $("#s_vol").oninput=e=>{S.set.vol=+e.target.value;save();au.volume=S.set.vol};
+}
+const closeSet=()=>$("#modal").classList.add("hidden");
+function resetAll(){const b=$("#rs_b");if(b.dataset.ok){try{localStorage.removeItem(KEY)}catch(e){}location.reload()}else{b.dataset.ok=1;b.textContent="⚠ 再按一次確認清除"}}
+
+/* ============ 世界總地圖大廳 ============ */
+// 標籤座標 [top%, left%]，與島嶼 1~6 依序對應；想微調位置只要改這裡
+const POS=[[22,26],[72,18],[62,84],[52,45],[25,60],[82,56]];
+function enter(i){cur=i;map();auto(ISLANDS[i].n+"。"+ISLANDS[i].t)}
+function lobby(){
+  B=null;view("lobby");bgm("lobby");
+  $("#lobby").innerHTML=`<div class="flex items-center justify-center w-full h-full"><div class="world aspect-video"><img src="images/world_map.jpg" alt="六大仙島世界總地圖" class="w-full h-full object-contain" onerror="this.style.display='none'">`+
+  ISLANDS.map((x,i)=>`<div class="pin" style="top:${POS[i][0]}%;left:${POS[i][1]}%"><button class="tag ${S.relics[i]?"got":""}" style="animation-delay:${i*.35}s" onclick="enter(${i})"><div class="font-black">${x.n}</div><div style="font-size:.8em">${S.cleared[i]}/20 關　${S.relics[i]?`<img src="${rs(i)}" alt="" style="height:1.4em;display:inline;vertical-align:middle"> ${x.r} ✅`:"🔒 法寶未得"}</div></button></div>`).join("")+`</div></div>
+  <div class="fixed left-3 text-white font-black text-2xl md:text-4xl" style="top:calc(env(safe-area-inset-top,0px) + 10px);text-shadow:0 2px 8px #000">📜 六大仙島世界總地圖</div>
+  <div class="fixed right-3 flex gap-2" style="top:calc(env(safe-area-inset-top,0px) + 10px)"><button class="tab" onclick="settings()">⚙ 設定</button><button class="tab" onclick="finale(true)">🧪 測試大結局</button></div>
+  <div class="fixed left-3 flex items-end gap-2" style="bottom:calc(env(safe-area-inset-bottom,0px) + 8px)"><img src="${hs()}" alt="" style="height:min(22vh,170px)"><span class="tab" style="margin-bottom:6px">${nm()}</span></div>`;
+}
+
+/* ============ 各島 20 關卷軸地圖 ============ */
+function map(){
+  B=null;view("main");bgm("island"+(cur+1),"map");
+  const I=ISLANDS[cur],c=S.cleared[cur];TXT=I.n+"。"+I.t;
+  let h=`<div class="flex gap-2 overflow-x-auto pb-2"><button class="tab" onclick="lobby()">🌏 總地圖</button>`+ISLANDS.map((x,i)=>`<button class="tab ${i===cur?"on":""}" onclick="cur=${i};map()">${x.n}</button>`).join("")+`</div>
+  <div class="card mt-2 p-3 flex items-center gap-3"><img src="${bs(cur)}" alt="" style="height:90px">
+  <div class="flex-1"><div class="font-black text-2xl">${I.n}</div><div class="text-base">魔王：${I.b}　法寶：${I.r} ${S.relics[cur]?"✅":"🔒"}</div>
+  <div class="text-base">${I.t}</div><div class="text-base">進度 ${c} / 20　錯題本 ${S.wrong[cur].length} 題</div></div>
+  <div class="flex flex-col items-center gap-1">${spk("")}<img src="${rs(cur)}" alt="" style="height:56px;${S.relics[cur]?"":"filter:brightness(0) opacity(.35)"}"></div></div>
+  <div class="card mt-2 map" style="background-image:linear-gradient(#fff3d8b0,#fff3d8b0),url(images/islands/island${cur+1}.jpg);background-size:cover;background-position:center"><div class="row">`;
+  for(let l=1;l<=20;l++){
+    const st=l<=c?"done":l===c+1?"cur":"lock",b=isBoss(l),lab=l===20?"👺":b?"👹":l;
+    h+=`<div class="text-center"><button class="node ${b?"boss":""} ${st}" ${st==="lock"?"disabled":""} onclick="start(${l})">${st==="done"&&!b?"✓":lab}</button><div><span class="lab">${l===20?"島主":b?"菁英":"第"+l+"關"}</span></div></div>${l<20?'<div class="seg"></div>':""}`;
+  }
+  $("#app").innerHTML=h+`</div></div><p class="text-center text-base mt-2">← 左右滑動卷軸地圖 →　（5、10、15 關為菁英魔王，20 關為島主）</p>`;
+  const k=document.querySelector(".node.cur");if(k)k.scrollIntoView({inline:"center",block:"nearest"});
+}
+
+/* ============ 出題 ============ */
+function makeQ(e,pool){
+  const p=Math.random()*4|0,ans=e[0][p];
+  const dis=shuf([...new Set(pool.flatMap(x=>[...x[0]]))].filter(ch=>ch!==ans)).slice(0,3);
+  return{e,p,ans,opts:shuf([ans,...dis])};
+}
+function start(l){
+  const pool=db(cur);let picks;stopSay();
+  if(isBoss(l)){
+    const n=l===20?8:5;
+    const w=shuf(S.wrong[cur]).map(id=>pool.find(x=>x[0]===id)).filter(Boolean).slice(0,n);
+    picks=w.concat(shuf(pool.filter(x=>!w.includes(x))).slice(0,n-w.length));
+    battle(l,picks);
+  }else{
+    picks=shuf(pool).slice(0,3);
+    TXT=picks.map(e=>`${e[0]}。意思是：${e[1]}。造句：${e[2]}`).join(" ");
+    $("#app").innerHTML=`<div class="card p-4"><h2 class="text-2xl font-black mb-3">📖 第 ${l} 關・戰前修煉秘笈</h2>`+picks.map(e=>`<div class="mb-3 p-3 rounded-xl" style="background:#0001"><div class="text-3xl font-black text-center">${e[0]}</div><div class="mt-1"><b>解釋：</b>${e[1]}</div><div><b>造句：</b>${e[2]}</div></div>`).join("")+`<div class="text-center">${spk("朗讀秘笈")} <button class="btn" id="go">修煉完成，開始挑戰！</button> <button class="tab" onclick="map()">回地圖</button></div></div>`;
+    $("#go").onclick=()=>battle(l,picks);
+    auto(TXT);
+  }
+}
+
+/* ============ 戰鬥 ============ */
+function mon(l){
+  if(l===20)return `<img id="mon" src="${bs(cur)}" alt="" style="height:190px">`;
+  if(isBoss(l))return `<img id="mon" src="${bs(cur)}" alt="" style="height:140px;filter:drop-shadow(0 0 10px #f33)">`;
+  return `<div id="mon" style="font-size:84px">👾</div>`;
+}
+function battle(l,picks){
+  const pool=db(cur);bgm(isBoss(l)?"boss":"battle","battle");
+  B={l,qs:picks.map(e=>makeQ(e,pool)),i:0,hp:3,n:picks.length,lock:false};
+  ask();
+}
+function ask(){
+  stopSay();
+  const I=ISLANDS[cur],q=B.qs[B.i],boss=isBoss(B.l);
+  const word=[...q.e[0]].map((c,i)=>i===q.p?"＿":c).join("");
+  TXT=`請選出空格該填的字。成語：${word}。提示：${q.e[1]}`;
+  $("#app").innerHTML=`<div id="stage" class="card p-3">
+  <div class="flex justify-between items-center"><b>第 ${B.l} 關${B.l===20?" 👺島主":boss?" 👹菁英":""}</b><span id="hearts" class="text-2xl">${"❤️".repeat(B.hp)}${"🖤".repeat(3-B.hp)}</span></div>
+  <div class="flex justify-between items-end mt-2"><img id="hero" src="${hs()}" alt="" style="height:120px"><div class="text-center">${mon(B.l)}
+  <div class="bar mx-auto" style="width:190px"><div style="width:${(B.n-B.i)/B.n*100}%"></div></div><div class="text-sm">${boss?I.b:"小妖"}　${B.n-B.i}/${B.n}</div></div></div>
+  <div class="text-center mt-3"><div class="text-5xl font-black" style="letter-spacing:.2em">${word}</div>
+  <div class="mt-2 text-lg">💡 ${q.e[1]}</div><div class="mt-1">${spk("聽題目")}</div></div>
+  <div class="grid grid-cols-2 gap-x-3 mt-2">`+q.opts.map(o=>`<button class="opt" onclick="pick(this,'${o}')">${o}</button>`).join("")+`</div><div id="fb" class="text-center min-h-8 font-bold"></div></div>`;
+  B.lock=false;auto(TXT);
+}
+function pick(btn,o){
+  if(B.lock)return;B.lock=true;
+  const q=B.qs[B.i],ok=o===q.ans,boss=isBoss(B.l),id=q.e[0],st=$("#stage");
+  document.querySelectorAll(".opt").forEach(b=>{if(b.textContent===q.ans)b.classList.add("ok")});
+  if(ok){
+    $("#mon").classList.add("hit");$(".bar>div").style.width=(B.n-B.i-1)/B.n*100+"%";
+    $("#fb").textContent="⚔️ 暴擊！"+q.e[0]+"：造句 "+q.e[2];
+    if(boss)S.wrong[cur]=S.wrong[cur].filter(x=>x!==id);
+  }else{
+    btn.classList.add("no");st.classList.add("shake");B.hp--;
+    $("#hearts").textContent="❤️".repeat(B.hp)+"🖤".repeat(3-B.hp);
+    $("#fb").textContent="💥 受傷了！正確是「"+q.e[0]+"」";
+    if(!S.wrong[cur].includes(id))S.wrong[cur].push(id);
+  }
+  save();
+  setTimeout(()=>{if(B.hp<=0)return lose();if(++B.i>=B.n)return win();ask()},ok?1700:2200);
+}
+function lose(){
+  const l=B.l;stopSay();TXT=`${nm()}，仙力耗盡了！錯的成語已放進錯題本，再挑戰一次吧！`;
+  $("#app").innerHTML=`<div class="card p-6 text-center"><img src="${hs()}" alt="" style="height:140px;margin:auto;filter:grayscale(.8)"><h2 class="text-3xl font-black my-2">仙力耗盡了！</h2><p>錯的成語已放進錯題本，下次魔王關會再考你。</p><div class="mt-4">${spk("")} <button class="btn" onclick="start(${l})">再挑戰一次</button> <button class="tab" onclick="map()">回地圖</button></div></div>`;
+  auto(TXT);
+}
+function win(){
+  const l=B.l,I=ISLANDS[cur];stopSay();
+  S.cleared[cur]=Math.max(S.cleared[cur],l);save();
+  if(l<20){
+    TXT=`${nm()}，第${l}關通過！`;
+    $("#app").innerHTML=`<div class="card p-6 text-center"><img src="${hs()}" alt="" style="height:140px;margin:auto"><h2 class="text-3xl font-black my-2">第 ${l} 關通過！</h2><div class="mt-4"><button class="btn" onclick="start(${l+1})">下一關</button> <button class="tab" onclick="map()">回地圖</button></div></div>`;
+    return auto(TXT);
+  }
+  const first=!S.relics[cur];S.relics[cur]=1;save();
+  TXT=`${nm()}打敗了${I.b}，獲得法寶${I.r}！`;
+  $("#app").innerHTML=`<div class="card p-6 text-center"><h2 class="text-3xl font-black">擊敗 ${I.b}！</h2>
+  <div style="display:grid;place-items:center;height:230px"><img class="cap" src="${bs(cur)}" alt="" style="grid-area:1/1;height:200px"><img id="rl" class="glow hidden" src="${rs(cur)}" alt="" style="grid-area:1/1;height:190px"></div>
+  <div id="rt" class="hidden text-2xl font-black">獲得法寶：${I.r}！</div>
+  <div class="mt-4"><button class="btn" id="nx">繼續</button></div></div>`;
+  setTimeout(()=>{$("#rl").classList.remove("hidden");$("#rt").classList.remove("hidden");auto(TXT)},1500);
+  $("#nx").onclick=()=>S.relics.every(Boolean)&&first?finale(false):map();
+}
+
+/* ============ 大結局 ============ */
+function finale(test){playStory(ENDING,()=>cert(test))}
+function cert(test){
+  view("main");bgm("ending","story");
+  const total=S.cleared.reduce((a,b)=>a+b,0);
+  $("#app").innerHTML=`<div class="card p-4 text-center"><div class="text-3xl font-black">🏯 天宮成語聖殿</div>
+  <div class="flex justify-center gap-2 my-2 flex-wrap">${ISLANDS.map((x,i)=>`<img class="glow" src="${rs(i)}" alt="${x.r}" style="height:64px">`).join("")}</div>
+  <p>六大法寶齊聚，成語世界恢復了！${test?"（測試預覽）":""}</p>
+  <div class="my-3"><label>你的名字：<input id="nm" maxlength="8" value="${S.name||""}" class="border-4 rounded-xl p-2 text-center text-2xl" style="border-color:var(--line);color:#4a2c10;width:200px"></label></div>
+  <div class="cert p-6 rounded-xl mx-auto" style="max-width:560px"><div class="text-3xl font-black">《齊天成語大聖》</div>
+  <div class="text-xl mt-2">榮譽證書</div><img src="${hs()}" alt="" style="height:110px;margin:6px auto 0"><div class="text-4xl font-black my-2" id="cn" style="min-height:48px">${S.name||"＿＿＿＿"}</div>
+  <p class="text-lg">通過六座仙島，破關 <b>${test?Math.max(total,120):total}</b> 關，<br>打敗六大妖怪，集齊六大法寶，<br>讓成語世界恢復正常，特此頒發，以資鼓勵！</p><div class="text-4xl mt-3">👑🏆</div></div>
+  <div class="mt-4"><button class="tab" onclick="lobby()">🌏 世界總地圖</button></div></div>`;
+  $("#nm").oninput=e=>{S.name=e.target.value;$("#cn").textContent=S.name||"＿＿＿＿";save()};
+}
+
+/* ============ 啟動 ============ */
+S.hero?lobby():pickHero();
+</script>
+</body>
+</html>
