@@ -4,6 +4,7 @@
 
 ## 檔案結構
 - `index.html`：遊戲本體（題庫 `idiomDatabase`、故事 `STORY`／`ENDING`、音樂設定 `BGM` 都在 `<script>` 最上方）
+- `images/minions/`：各島小妖（每島 a、b 兩隻，輪流出現並用色相變化區分）
 - `images/`：`world_map.jpg` 世界總地圖、`chars/` 男女主角、`islands/` 各島背景、`monsters/` 各島魔王、`relics/` 各島法寶
 - `audio/`：（需自行建立）放背景音樂 mp3
 
