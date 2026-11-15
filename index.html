@@ -438,6 +438,7 @@ let cur=0,B=null;
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 const db=i=>idiomDatabase["island"+(i+1)],isBoss=l=>l%5===0;
 const nm=()=>S.name||"小勇者",hs=()=>`images/chars/${S.hero||"boy"}.webp`;
+const hb=()=>`images/chars/${S.hero||"boy"}_battle.webp`; // 戰鬥用（臉朝右）
 const rs=i=>`images/relics/relic${i+1}.webp`,bs=i=>`images/monsters/boss${i+1}.webp`;
 
 /* ============ 背景音樂 ============ */
@@ -608,7 +609,7 @@ function ask(){
   $("#app").innerHTML=`<div id="stage" class="card p-3">
   <div class="font-black">第 ${B.l} 關${B.l===20?" 👺島主":boss?" 👹菁英":""}</div>
   <div id="arena" class="arena" style="${bg}">
-    <div class="side"><img id="hero" src="${hs()}" alt="" style="height:130px"><div id="hbar">${bar(B.max,B.hp,"g")}</div><span class="nmtag">${nm()}</span></div>
+    <div class="side"><img id="hero" src="${hb()}" alt="" style="height:130px"><div id="hbar">${bar(B.max,B.hp,"g")}</div><span class="nmtag">${nm()}</span></div>
     <div class="side">${mon(B.l)}<div id="mbar">${bar(B.n,B.mhp)}</div><span class="nmtag">${boss?I.b:"小妖"}</span></div>
   </div>
   <div class="text-center mt-3">${qh}<div class="mt-1">${spk("聽題目")}</div></div>
