@@ -108,6 +108,73 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Serif TC",
   transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
+/* 讓主角與怪物平時有呼吸動態 */
+#hero, #mon {
+  animation: idleFloat 2.4s ease-in-out infinite;
+}
+@keyframes idleFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* 主角前衝施法姿勢 */
+.hero-dash {
+  animation: heroDash 0.45s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+@keyframes heroDash {
+  0% { transform: translateX(0) scale(1); }
+  40% { transform: translateX(40px) scale(1.12); filter: drop-shadow(0 0 15px gold); }
+  100% { transform: translateX(0) scale(1); }
+}
+
+/* 飛越舞台的成語光字 */
+.flying-idiom {
+  position: absolute;
+  font-size: 28px;
+  font-weight: 900;
+  color: #fff;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 50;
+  text-shadow: 0 0 8px #ff9800, 0 0 18px #ff3d00, 2px 2px 0 #5d1900;
+}
+
+/* 命中時爆出的華麗傷害/招式大字 */
+.dmg-pop {
+  position: absolute;
+  font-size: 32px;
+  font-weight: 900;
+  color: #ffd700;
+  text-shadow: 0 2px 0 #b71c1c, 0 0 15px #ffeb3b;
+  pointer-events: none;
+  z-index: 60;
+  animation: popUpFade 0.9s ease-out forwards;
+}
+@keyframes popUpFade {
+  0% { opacity: 0; transform: translate(-50%, 0) scale(0.5); }
+  30% { opacity: 1; transform: translate(-50%, -25px) scale(1.25); }
+  100% { opacity: 0; transform: translate(-50%, -55px) scale(1); }
+}
+
+/* 不同屬性的舞台閃光特效 */
+.flash-fire { box-shadow: inset 0 0 60px rgba(255, 87, 34, 0.85) !important; }
+.flash-water { box-shadow: inset 0 0 60px rgba(0, 188, 212, 0.85) !important; }
+.flash-wind { box-shadow: inset 0 0 60px rgba(76, 175, 80, 0.85) !important; }
+.flash-gold { box-shadow: inset 0 0 60px rgba(255, 215, 0, 0.85) !important; }
+
+/* 第二島泡泡魚干擾泡泡 */
+.bubble-mask {
+  display: inline-block;
+  position: relative;
+  color: transparent !important;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(100,210,255,0.6));
+  border: 2px solid #81d4fa;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(129, 212, 250, 0.8);
+  transition: transform 0.15s;
+}
+.bubble-mask:hover { transform: scale(1.1); }
 
 </style>
 </head>
@@ -666,36 +733,116 @@ function ask(){
 }
 const IRON='<svg viewBox="0 0 44 44" width="44" height="44"><g fill="#8b929c" stroke="#2d3138" stroke-width="2"><circle cx="22" cy="22" r="11"/><path d="M22 1l4 10h-8zM22 43l-4-10h8zM1 22l10-4v8zM43 22l-10 4v-8zM7 7l10 3-3 3zM37 37l-10-3 3-3zM37 7l-3 10-3-3zM7 37l3-10 3 3z"/></g></svg>';
 // 發射火球：kind = red（主角）／green、iron（小妖）
-function shoot(kind,from,to,done){
-  const ar=$("#arena"),a=ar.getBoundingClientRect(),f=from.getBoundingClientRect(),t=to.getBoundingClientRect();
-  const sx=f.left+f.width/2-a.left,sy=f.top+f.height*.4-a.top,ex=t.left+t.width/2-a.left,ey=t.top+t.height*.45-a.top;
-  const p=document.createElement("div");p.className="proj "+kind;p.innerHTML=kind==="iron"?IRON:"";
-  p.style.left=sx+"px";p.style.top=sy+"px";ar.appendChild(p);
-  const an=p.animate([{transform:"translate(-50%,-50%) scale(.6)"},{transform:`translate(calc(-50% + ${ex-sx}px),calc(-50% + ${ey-sy}px)) scale(1.1) rotate(${kind==="iron"?540:0}deg)`}],{duration:550,easing:"ease-in"});
-  an.onfinish=()=>{p.remove();const bu=document.createElement("div");bu.className="burst "+kind;bu.style.left=ex+"px";bu.style.top=ey+"px";ar.appendChild(bu);setTimeout(()=>bu.remove(),500);done()};
+let comboCount = 0; // 記錄連續答對次數
+
+// 根據成語字面自動解析屬性與招式名稱
+function getIdiomPower(idiom) {
+  if (/[火炎燃燒熱赤陽電雷光]/.test(idiom)) return { cls: "flash-fire", tag: "🔥 烈焰真言" };
+  if (/[水海江河浪波冰雪雨寒泉]/.test(idiom)) return { cls: "flash-water", tag: "🌊 滄海神咒" };
+  if (/[風雲飛鳥林木花草葉春]/.test(idiom)) return { cls: "flash-wind", tag: "🍃 青風靈訣" };
+  return { cls: "flash-gold", tag: "✨ 文曲神光" };
 }
-function pick(btn,o){
-  if(B.lock)return;B.lock=true;
-  const q=B.qs[B.i],ok=o===q.ans,boss=isBoss(B.l),id=q.e[0];
-  document.querySelectorAll(".opt").forEach(b=>{if(b.textContent===q.ans)b.classList.add("ok")});
-  if(ok){
-    if(boss)S.wrong[cur]=S.wrong[cur].filter(x=>x!==id);
-    shoot("red",$("#hero"),$("#mon"),()=>{
-      $("#mon").classList.add("hit");B.mhp--;$("#mbar").innerHTML=bar(B.n,B.mhp);
-      $("#fb").textContent="🔥 擊中！"+q.e[0]+"：造句 "+q.e[2];
-    });
-  }else{
+
+// 升級版發射：火球＋成語文字一起飛過去！
+function shoot(kind, from, to, done, idiomText = "") {
+  const ar = $("#arena"), a = ar.getBoundingClientRect(), f = from.getBoundingClientRect(), t = to.getBoundingClientRect();
+  const sx = f.left + f.width / 2 - a.left, sy = f.top + f.height * .4 - a.top;
+  const ex = t.left + t.width / 2 - a.left, ey = t.top + t.height * .45 - a.top;
+
+  // 如果是主角攻擊，讓主角前衝，並飛出成語文字
+  if (kind === "red") {
+    $("#hero").classList.add("hero-dash");
+    setTimeout(() => $("#hero").classList.remove("hero-dash"), 450);
+
+    if (idiomText) {
+      const wt = document.createElement("div");
+      wt.className = "flying-idiom";
+      wt.textContent = idiomText;
+      wt.style.left = sx + "px";
+      wt.style.top = (sy - 20) + "px";
+      ar.appendChild(wt);
+      wt.animate([
+        { transform: "translate(-50%, -50%) scale(0.7)", opacity: 0.8 },
+        { transform: `translate(calc(-50% + ${ex - sx}px), calc(-50% + ${ey - sy - 20}px)) scale(1.2)`, opacity: 1 }
+      ], { duration: 550, easing: "ease-in" }).onfinish = () => wt.remove();
+    }
+  }
+
+  const p = document.createElement("div");
+  p.className = "proj " + kind;
+  p.innerHTML = kind === "iron" ? IRON : "";
+  p.style.left = sx + "px"; p.style.top = sy + "px";
+  ar.appendChild(p);
+
+  const an = p.animate([
+    { transform: "translate(-50%,-50%) scale(.6)" },
+    { transform: `translate(calc(-50% + ${ex - sx}px),calc(-50% + ${ey - sy}px)) scale(1.1) rotate(${kind === "iron" ? 540 : 0}deg)` }
+  ], { duration: 550, easing: "ease-in" });
+
+  an.onfinish = () => {
+    p.remove();
+    const bu = document.createElement("div");
+    bu.className = "burst " + kind;
+    bu.style.left = ex + "px"; bu.style.top = ey + "px";
+    ar.appendChild(bu);
+    setTimeout(() => bu.remove(), 500);
+
+    // 命中時爆出華麗招式大字與舞台屬性閃光
+    if (kind === "red" && idiomText) {
+      const pwr = getIdiomPower(idiomText);
+      ar.classList.add(pwr.cls);
+      setTimeout(() => ar.classList.remove(pwr.cls), 400);
+
+      const pop = document.createElement("div");
+      pop.className = "dmg-pop";
+      pop.innerHTML = `${pwr.tag}${comboCount > 1 ? ` <span style="font-size:22px;color:#fff">(${comboCount}連擊!)</span>` : ""}`;
+      pop.style.left = ex + "px";
+      pop.style.top = (ey - 30) + "px";
+      ar.appendChild(pop);
+      setTimeout(() => pop.remove(), 900);
+    }
+    done();
+  };
+}
+
+function pick(btn, o) {
+  if (B.lock) return; B.lock = true;
+  const q = B.qs[B.i], ok = o === q.ans, boss = isBoss(B.l), id = q.e[0];
+  document.querySelectorAll(".opt").forEach(b => { if (b.textContent === q.ans) b.classList.add("ok") });
+
+  if (ok) {
+    comboCount++; // 連擊數增加
+    if (boss) S.wrong[cur] = S.wrong[cur].filter(x => x !== id);
+    // 把成語文字 q.e[0] 傳進 shoot 一起發射！
+    shoot("red", $("#hero"), $("#mon"), () => {
+      $("#mon").classList.add("hit");
+      $("#stage").classList.add("shake");
+      setTimeout(() => $("#stage").classList.remove("shake"), 350);
+      B.mhp--;
+      $("#mbar").innerHTML = bar(B.n, B.mhp);
+      $("#fb").textContent = "🔥 擊中！" + q.e[0] + "：造句 " + q.e[2];
+    }, q.e[0]);
+  } else {
+    comboCount = 0; // 答錯連擊歸零
     btn.classList.add("no");
-    if(!S.wrong[cur].includes(id))S.wrong[cur].push(id);
-    if(B.clear)B.qs.push(makeQ(q.e,db(cur))); // 一般關：答錯的成語換個問法再考一次
-    shoot(Math.random()<.5?"green":"iron",$("#mon"),$("#hero"),()=>{
-      B.hp--;$("#hero").classList.add("shake");$("#stage").classList.add("shake");$("#hbar").innerHTML=bar(B.max,B.hp,"g");
-      $("#fb").textContent="💥 被打中了！正確是「"+q.e[0]+"」";
+    if (!S.wrong[cur].includes(id)) S.wrong[cur].push(id);
+    if (B.clear) B.qs.push(makeQ(q.e, db(cur)));
+    shoot(Math.random() < .5 ? "green" : "iron", $("#mon"), $("#hero"), () => {
+      B.hp--;
+      $("#hero").classList.add("shake");
+      $("#stage").classList.add("shake");
+      $("#hbar").innerHTML = bar(B.max, B.hp, "g");
+      $("#fb").textContent = "💥 被打中了！正確是「" + q.e[0] + "」";
     });
   }
   save();
-  B.timer=setTimeout(()=>{if(B.hp<=0)return lose();if(B.clear?B.mhp<=0:B.i+1>=B.n)return win();B.i++;ask()},ok?1800:2300);
+  B.timer = setTimeout(() => {
+    if (B.hp <= 0) return lose();
+    if (B.clear ? B.mhp <= 0 : B.i + 1 >= B.n) return win();
+    B.i++; ask();
+  }, ok ? 1800 : 2300);
 }
+
 function lose(){
   const l=B.l;stopSay();TXT=`${nm()}，仙力耗盡了！錯的成語已放進錯題本，再挑戰一次吧！`;
   $("#app").innerHTML=`<div class="card p-6 text-center"><img src="${hs()}" alt="" style="height:140px;margin:auto;filter:grayscale(.8)"><h2 class="text-3xl font-black my-2">仙力耗盡了！</h2><p>錯的成語已放進錯題本，下次魔王關會再考你。</p><div class="mt-4">${spk("")} <button class="btn" onclick="start(${l})">再挑戰一次</button> <button class="tab" onclick="map()">回地圖</button></div></div>`;
