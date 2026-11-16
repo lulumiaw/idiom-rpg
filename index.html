@@ -63,50 +63,51 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Serif TC",
 .burst{position:absolute;width:30px;height:30px;border-radius:50%;z-index:6;pointer-events:none;animation:burst .45s forwards}
 .burst.red{background:#ff8a1f}.burst.green{background:#59f06a}.burst.iron{background:#c9ced6}
 @keyframes burst{from{transform:translate(-50%,-50%) scale(1);opacity:.9}to{transform:translate(-50%,-50%) scale(4);opacity:0}}
-/* 1. 角色待機呼吸動畫（讓畫面活起來） */
+/* 1. 讓小妖/魔王平時就會上下漂浮呼吸 */
 @keyframes floatIdle {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-6px); }
 }
-.character-sprite {
+#mon {
   animation: floatIdle 2.5s ease-in-out infinite;
   transition: transform 0.2s ease;
 }
 
-/* 2. 主角前衝施法動作 */
-@keyframes heroAttack {
-  0% { transform: translateX(0) scale(1); }
-  40% { transform: translateX(40px) scale(1.1); filter: drop-shadow(0 0 12px #ffd700); }
-  100% { transform: translateX(0) scale(1); }
-}
-.hero-casting {
-  animation: heroAttack 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* 3. 怪物「小妖」受擊閃白＋震動擊退 */
+/* 2. 小妖受擊閃白＋震動擊退（注意：不能蓋掉你原本的 hue-rotate 變色濾鏡） */
 @keyframes enemyHit {
-  0% { transform: translateX(0); filter: brightness(1); }
-  20% { transform: translateX(25px) rotate(8deg); filter: brightness(5) invert(0.8); }
-  40% { transform: translateX(-10px) rotate(-5deg); filter: brightness(2); }
+  0% { transform: translateX(0); }
+  20% { transform: translateX(25px) rotate(8deg) scale(1.1); opacity: 0.4; }
+  40% { transform: translateX(-10px) rotate(-5deg); opacity: 1; }
   60% { transform: translateX(12px) rotate(3deg); }
   80% { transform: translateX(-5px); }
-  100% { transform: translateX(0) rotate(0deg); filter: brightness(1); }
+  100% { transform: translateX(0) rotate(0deg) scale(1); }
 }
-.enemy-damaged {
-  animation: enemyHit 0.5s ease-out;
+.mon-hit {
+  animation: enemyHit 0.45s ease-out !important;
 }
 
-/* 4. 飛越舞台的「成語文字法球」 */
-.idiom-projectile {
-  position: absolute;
-  font-size: 36px;
-  font-weight: bold;
-  color: #fff;
-  text-shadow: 0 0 10px #ff9800, 0 0 20px #ff5722;
-  pointer-events: none;
-  z-index: 99;
-  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+/* 3. 主角前衝施法動作 */
+@keyframes heroAttack {
+  0% { transform: translateX(0) scale(1); }
+  40% { transform: translateX(45px) scale(1.15); filter: drop-shadow(0 0 15px #ffd700); }
+  100% { transform: translateX(0) scale(1); }
 }
+.hero-cast {
+  animation: heroAttack 0.45s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+/* 4. 飛越畫面的金色成語字靈法球 */
+.word-blast {
+  position: fixed;
+  font-size: 42px;
+  font-weight: 900;
+  color: #fff8dc;
+  text-shadow: 0 0 10px #ff9800, 0 0 25px #ff5722, 0 0 40px #ffd700;
+  pointer-events: none;
+  z-index: 9999;
+  transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
 
 </style>
 </head>
