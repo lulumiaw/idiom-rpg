@@ -574,12 +574,14 @@ function start(l){
 }
 
 /* ============ 戰鬥 ============ */
+// 戰鬥畫面角色高度（px）：主角 130；妖怪約為原本的 70%。覺得太大或太小，改這裡就好
+const SIZE={hero:130,minion:98,elite:105,boss:133};
 const MINION_TINT=[0,60,150,230]; // 同一隻小妖輪第二次出現時，用不同色相區分
 function mon(l){
-  if(l===20)return `<img id="mon" src="${bs(cur)}" alt="" style="height:190px">`;
-  if(isBoss(l))return `<img id="mon" src="${bs(cur)}" alt="" style="height:150px;filter:drop-shadow(0 0 10px #f33)">`;
+  if(l===20)return `<img id="mon" src="${bs(cur)}" alt="" style="height:${SIZE.boss}px">`;
+  if(isBoss(l))return `<img id="mon" src="${bs(cur)}" alt="" style="height:${SIZE.elite}px;filter:drop-shadow(0 0 10px #f33)">`;
   const idx=l-1-Math.floor(l/5); // 一般關卡的順序 0~15
-  return `<img id="mon" src="images/minions/minion_${cur+1}${"ab"[idx%2]}.webp" alt="" style="height:140px;filter:hue-rotate(${MINION_TINT[Math.floor(idx/2)%4]}deg)">`;
+  return `<img id="mon" src="images/minions/minion_${cur+1}${"ab"[idx%2]}.webp" alt="" style="height:${SIZE.minion}px;filter:hue-rotate(${MINION_TINT[Math.floor(idx/2)%4]}deg)">`;
 }
 function bar(n,on,cls){let h="";for(let i=0;i<n;i++)h+=`<i class="sg ${i<on?"on "+(cls||""):""}"></i>`;return `<div class="sgbar">${h}</div>`}
 function battle(l,picks){
@@ -609,7 +611,7 @@ function ask(){
   $("#app").innerHTML=`<div id="stage" class="card p-3">
   <div class="font-black">第 ${B.l} 關${B.l===20?" 👺島主":boss?" 👹菁英":""}</div>
   <div id="arena" class="arena" style="${bg}">
-    <div class="side"><img id="hero" src="${hb()}" alt="" style="height:130px"><div id="hbar">${bar(B.max,B.hp,"g")}</div><span class="nmtag">${nm()}</span></div>
+    <div class="side"><img id="hero" src="${hb()}" alt="" style="height:${SIZE.hero}px"><div id="hbar">${bar(B.max,B.hp,"g")}</div><span class="nmtag">${nm()}</span></div>
     <div class="side">${mon(B.l)}<div id="mbar">${bar(B.n,B.mhp)}</div><span class="nmtag">${boss?I.b:"小妖"}</span></div>
   </div>
   <div class="text-center mt-3">${qh}<div class="mt-1">${spk("聽題目")}</div></div>
