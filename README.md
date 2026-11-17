@@ -3,27 +3,38 @@
 兒童成語闖關遊戲：選角色、輸入名字、看開場故事，再挑戰六大仙島 × 20 關，打敗妖怪、蒐集法寶。
 
 ## 檔案結構
-- `index.html`：遊戲本體（題庫 `idiomDatabase`、故事 `STORY`／`ENDING`、音樂設定 `BGM` 都在 `<script>` 最上方）
-- `images/minions/`：各島小妖（每島 a、b 兩隻，輪流出現並用色相變化區分）
-- `images/`：`world_map.jpg` 世界總地圖、`chars/` 男女主角、`islands/` 各島背景、`monsters/` 各島魔王、`relics/` 各島法寶
+- `index.html`：遊戲本體（題庫 `idiomDatabase`、劇情 `STORY`／`LORE`／`ENDING`、音樂 `BGM` 都在 `<script>` 最上方）
+- `fonts/`：注音字型（芫荽、字嗨，已裁成 woff2）與授權檔，**請整個資料夾一起上傳**
+- `tools/build_zhuyin.py`：新增題庫或劇情後執行，更新多音字讀音表
+- `images/`：`world_map.jpg`、`chars/`、`islands/`、`monsters/`、`relics/`、`minions/`
 - `audio/`：（需自行建立）放背景音樂 mp3
 
 ## 用 GitHub Pages 發布
-1. 把 `index.html`、`images/`（和之後的 `audio/`）上傳到 repository 根目錄。
+1. 把 `index.html`、`fonts/`、`images/`（和之後的 `audio/`）上傳到 repository 根目錄。
 2. Settings → Pages → Source 選 `Deploy from a branch`，Branch 選 `main` / `(root)`。
-3. 等一兩分鐘，即可用 `https://你的帳號.github.io/repository名稱/` 開啟。
 
-## 加背景音樂
-1. 在根目錄建立 `audio/` 資料夾，放入 mp3（請使用你有權使用的音樂）。
-2. 打開 `index.html`，找到 `const BGM={...}`，把檔名填進去，例如：
-   `lobby:"world.mp3", boss:"boss.mp3", island3:"fire.mp3"`
-   可用鍵：lobby、story、map、battle、boss、ending，以及 island1 ~ island6。留空就不播放。
-3. 遊戲內「⚙ 設定」可開關音樂與調整音量。
+## 注音字型
+- 預設「芫荽」，遊戲內「⚙ 設定 → 字型」可切換「字嗨」或一般字型。
+- 多音字（行、樂、長、得、一…）由 `tools/build_zhuyin.py` 以 pypinyin 判斷讀音，寫入 `index.html` 的 `VSM` 表。
+  它是依詞語上下文自動判斷，不是百分之百，發現讀錯請回報。填空題的「選項單字」沒有上下文，一律顯示預設讀音。
+- 擴充題庫後執行：`pip install pypinyin fonttools brotli`，再 `python3 tools/build_zhuyin.py`。
+  若新成語用了字型裡沒有的罕見字，請把兩款原始字型放在某資料夾，執行 `python3 tools/build_zhuyin.py 字型資料夾` 重新裁切。
+- 授權：芫荽為 SIL OFL 1.1；字嗨漢字部分 CC-BY 4.0。散布字型時須附 `fonts/LICENSE-*.txt`（已附）。字型來源：ButTaiwan/bpmfvs。
 
-## 語音朗讀
-使用瀏覽器內建的中文語音（優先選台灣國語），不需要額外檔案。各裝置語音品質不同；個別成語的多音字偶爾會唸錯。
+## 語音（免費、不需額外檔案）
+使用瀏覽器內建中文語音。旁白、小書生、小仙女、妖怪各有不同的音高與語速，並自動分配裝置上不同的中文聲線；
+「⚙ 設定」可為每個角色手動挑選聲線並試聽。妖怪負責唸題目、發出心聲；主角喊出成語招式；旁白念劇情。
+注意：音高調整在部分語音（如某些 Google 雲端語音）無效；裝置上只有一種中文語音時，差異只來自音高與語速。
+
+## 戰鬥
+- 主角每次答對從 5 種招式（飛彈、拋物線、天降、劍氣、衝撞）隨機出招，圖案依島嶼變化；連續答對 3 題發動「成語連擊」。
+- 妖怪答錯反擊：小妖 3 種招式，魔王關再加天降與落雷；被打中時的反應和擊敗時的動畫也會變化。
+- 戰鬥中妖怪會冒出「心聲」對話泡泡。
+
+## 劇情
+改 `LORE`：每島有 `in`（魔王為何來搶成語島，第一次進島播放）、`mid`（第 5／10／15 關首次通關的小插曲）、
+`ed`（島主告白）、`gs`（小妖八卦，戰前秘笈頁）、`mt`（小妖心聲）、`m`（小妖名字）。格式 `[圖示, 文字, 說話者]`，說話者 `nar`／`hero`／`mon`。
 
 ## 其他
-- 島嶼標籤位置：改 `POS`（[top%, left%]）。
-- 擴充題庫：在 `idiomDatabase` 各島陣列後加 `["成語","解釋","造句"],`。
+- 島嶼標籤位置：改 `POS`。擴充題庫：在 `idiomDatabase` 各島陣列後加 `["成語","解釋","造句"],`。
 - 進度、角色、名字、設定都存在瀏覽器 localStorage，換裝置或清除資料會重置。
