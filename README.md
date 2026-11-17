@@ -6,7 +6,7 @@
 - `index.html`：遊戲本體（題庫 `idiomDatabase`、劇情 `STORY`／`LORE`／`ENDING`、音樂 `BGM` 都在 `<script>` 最上方）
 - `fonts/`：注音字型（芫荽、字嗨，已裁成 woff2）與授權檔，**請整個資料夾一起上傳**
 - `tools/build_zhuyin.py`：新增題庫或劇情後執行，更新多音字讀音表
-- `images/`：`world_map.jpg`、`chars/`、`islands/`、`monsters/`、`relics/`、`minions/`
+- `images/`：`world_map.jpg`、`chars/`、`islands/`、`monsters/`、`relics/`、`minions/`（minion_1a ~ minion_6d，共 24 隻）
 - `audio/`：（需自行建立）放背景音樂 mp3
 
 ## 用 GitHub Pages 發布
