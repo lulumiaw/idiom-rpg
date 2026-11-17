@@ -502,7 +502,10 @@ const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 const db=i=>idiomDatabase["island"+(i+1)],isBoss=l=>l%5===0;
 const nm=()=>S.name||"小勇者",hs=()=>`images/chars/${S.hero||"boy"}.webp`;
 const hb=()=>`images/chars/${S.hero||"boy"}_battle.webp`; // 戰鬥用（臉朝右）
-const rs=i=>`images/relics/relic${i+1}.webp`,bs=i=>`images/monsters/boss${i+1}.webp`;
+const rs=i=>`images/relics/relic${i+1}.webp`,BOSS=[0,1,2,3,4,5].map(i=>`images/monsters/boss${i+1}.webp`),bs=i=>BOSS[i];
+// 這幾島的島主原圖臉朝右，載入後自動水平翻轉成朝左（面向主角）。圖檔本身已翻好，所以目前是空的；想讓其他島主也自動翻轉，把島號減 1 填進來
+const FLIP=[];
+FLIP.forEach(i=>{const im=new Image();im.onload=()=>{try{const c=document.createElement("canvas");c.width=im.naturalWidth;c.height=im.naturalHeight;const x=c.getContext("2d");x.translate(c.width,0);x.scale(-1,1);x.drawImage(im,0,0);BOSS[i]=c.toDataURL("image/png")}catch(e){}};im.src=BOSS[i]});
 
 /* ============ 背景音樂 ============ */
 const au=new Audio();au.loop=true;let want="";
