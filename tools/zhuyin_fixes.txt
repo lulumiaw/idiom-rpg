@@ -2,3 +2,12 @@
 # 優先於自動判斷。改完執行 python3 tools/build_zhuyin.py 即可。
 # 範例（目前已由程式規則處理，僅供示範）：
 美不勝收 勝=sheng1
+# 「降」表示投降時唸 ㄒㄧㄤˊ
+招降 降=xiang2
+投降 降=xiang2
+勸降 降=xiang2
+受降 降=xiang2
+歸降 降=xiang2
+乞降 降=xiang2
+降服 降=xiang2
+降伏 降=xiang2
