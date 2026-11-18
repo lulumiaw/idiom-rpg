@@ -6,7 +6,7 @@
 - `index.html`：遊戲本體（題庫 `idiomDatabase`、劇情 `STORY`／`LORE`／`ENDING`、音樂 `BGM` 都在 `<script>` 最上方）
 - `fonts/`：注音字型（芫荽、字嗨，已裁成 woff2）與授權檔，**請整個資料夾一起上傳**
 - `tools/build_zhuyin.py`：新增題庫或劇情後執行，更新多音字讀音表
-- `images/`：`world_map.jpg`、`chars/`、`islands/`、`monsters/`、`relics/`、`minions/`（minion_1a ~ minion_6d，共 24 隻）
+- `images/`：`world_map.jpg`、`chars/`、`islands/`、`monsters/`、`relics/`、`minions/`（minion_1a ~ minion_6f，共 36 隻）
 - `audio/`：（需自行建立）放背景音樂 mp3
 
 ## 用 GitHub Pages 發布
@@ -38,3 +38,10 @@
 ## 其他
 - 島嶼標籤位置：改 `POS`。擴充題庫：在 `idiomDatabase` 各島陣列後加 `["成語","解釋","造句"],`。
 - 進度、角色、名字、設定都存在瀏覽器 localStorage，換裝置或清除資料會重置。
+
+## 小妖夥伴（a~f）
+通關一般關後可招降該關的小妖，帶牠出戰。能力：a 護衛（擋一次攻擊）、b 補給（每答對 4 題回 1 格）、c 助攻（每題 +5 EXP）、d 鼓勵（答錯不斷連擊）、
+e 靈眼（每場第一題自動刪去 1 個錯誤選項）、f 福星（通關額外 +10 EXP）。
+小妖名字在 `LORE` 的 `m:[...]`，叫聲與招牌台詞在 `MT`，能力說明在 `PET_FX`，三處都依 a~f 順序排列。
+## 注音校正
+`tools/zhuyin_fixes.txt` 可手動指定某詞某字的讀音；「一、不」的變調與「不勝」的勝(ㄕㄥ)已內建規則。修改後執行 `python3 tools/build_zhuyin.py`。

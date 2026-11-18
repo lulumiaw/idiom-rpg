@@ -27,14 +27,43 @@ def vs(c,r):
     i=A.get(c,{}).get(r)
     return chr(0xE01E0+i) if i and Z.get(c,{}).get(r)==i else ''   # 兩款字型索引一致才插入
 HAN=re.compile(r'[\u4e00-\u9fff]+')
+# 人工校正表：tools/zhuyin_fixes.txt，每行「詞語 字=拼音」（拼音用數字調，如 sheng1），優先於自動判斷
+FIXES=[]
+fp=os.path.join(here,'zhuyin_fixes.txt')
+if os.path.exists(fp):
+    for ln in open(fp,encoding='utf-8'):
+        ln=ln.split('#')[0].split()
+        if len(ln)>=2:FIXES.append((ln[0],[(ln[0].index(x.split('=')[0]),x.split('=')[1]) for x in ln[1:]]))
+ORD=set('第初十百千萬零〇唯統之')   # 這些字後面的「一」是序數／數字，唸原調 ㄧ
+def tone(p):return int(p[-1]) if p[-1].isdigit() else 5
+def rules(run,py):
+    """依教育部國語辭典的變調標示調整：一、不 的變調，以及「不勝」的勝(ㄕㄥ)。"""
+    py=list(py)
+    for w,fx in FIXES:
+        for m in re.finditer(re.escape(w),run):
+            for off,pp in fx:py[m.start()+off]=pp
+    for i,c in enumerate(run):
+        if c=='勝' and i and run[i-1]=='不':py[i]='sheng1'
+    base=list(py)
+    t=lambda j:1 if run[j]=='一' else 4 if run[j]=='不' else tone(base[j])
+    for i,c in enumerate(run):
+        nxt=i+1<len(run)
+        if c=='一':
+            py[i]='yi1' if (not nxt or (i and run[i-1] in ORD)) else ('yi2' if t(i+1)==4 else 'yi4')
+        elif c=='不' and base[i] in('bu4','bu2'):
+            py[i]='bu2' if nxt and t(i+1)==4 else 'bu4'
+    return py
 def conv(s):
     def f(m):
         run=m.group(0);py=lazy_pinyin(run,style=Style.TONE3,neutral_tone_with_five=True,v_to_u=False)
         if len(py)!=len(run):return run
+        py=rules(run,py)
         return ''.join(c+vs(c,p) for c,p in zip(run,py))
     return HAN.sub(f,s)
 body=html[html.index('<script>'):]
+body=re.sub(r'/\*VSM_BEGIN\*/.*?/\*VSM_END\*/','',body,flags=re.S)   # 不要把上一次產生的讀音表當成原文
 strs={p for m in re.findall(r'"([^"\n`]*[\u4e00-\u9fff][^"\n`]*)"',body) if '$' not in m and '<' not in m for p in m.split('{n}') if HAN.search(p)}
+strs|={p for m in re.findall(r'[\u4e00-\u9fff][\u4e00-\u9fff，。！？、：；「」『』（）…]*',body) for p in m.split('{n}') if HAN.search(p)}  # 連介面文字（樣板字串內的中文）也一併處理
 vsm={s:conv(s) for s in strs}
 vsm={k:v for k,v in vsm.items() if k!=v}
 js='{'+','.join('"%s":"%s"'%(k,''.join('\\u{%x}'%ord(c) if ord(c)>=0xE0100 else c for c in v)) for k,v in sorted(vsm.items()))+'}'
