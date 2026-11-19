@@ -566,7 +566,17 @@ function confirmHero(){
 /* ============ 故事播放 ============ */
 let ST;
 function playStory(list,done,i){ST={list,done,i:i||0};drawStory()}
-function stepStory(d){ST.i+=d;if(ST.i>=ST.list.length)return ST.done();drawStory()}
+/* ---- 診斷：程式出錯時，畫面最上方會跳出紅色訊息，方便截圖回報 ---- */
+function showErr(e){
+  try{console.error(e);let b=document.getElementById("errbar");
+  if(!b){b=document.createElement("div");b.id="errbar";b.style.cssText="position:fixed;top:0;left:0;right:0;z-index:9999;background:#b00020;color:#fff;padding:8px 12px;font-size:15px;line-height:1.5;max-height:45vh;overflow:auto;white-space:pre-wrap;word-break:break-all";document.body.appendChild(b)}
+  const msg=(e&&e.message)||String(e),st=((e&&e.stack)||"").split("\n").slice(0,4).join("\n");
+  b.textContent="⚠ 程式出錯了（請截圖給老師或工程師）\n"+msg+"\n"+st+"\n";
+  const x=document.createElement("button");x.textContent="關閉";x.style.cssText="margin-top:6px;padding:2px 12px";x.onclick=()=>b.remove();b.appendChild(x)}catch(_){}
+}
+window.addEventListener("error",ev=>showErr(ev.error||ev.message));
+window.addEventListener("unhandledrejection",ev=>showErr(ev.reason));
+function stepStory(d){ST.i+=d;if(ST.i>=ST.list.length){try{return ST.done()}catch(e){return showErr(e)}}drawStory()}
 function drawStory(){
   const s=ST.list[ST.i],t=s[1].replace(/\{n\}/g,nm()),last=ST.i===ST.list.length-1;
   view("scene");bgm("story","lobby");TXT=t;
