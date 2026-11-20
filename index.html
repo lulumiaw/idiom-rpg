@@ -101,6 +101,18 @@ body[data-font=ian] .opt.w,body[data-font=zihi] .opt.w{font-size:clamp(18px,4.6v
 .trkpop{position:absolute;left:50%;top:6px;font-weight:900;font-size:22px;white-space:nowrap;animation:trkpop 1.1s forwards}
 @keyframes trkpop{0%{opacity:0;transform:translate(-50%,10px) scale(.6)}20%{opacity:1;transform:translate(-50%,0) scale(1.2)}100%{opacity:0;transform:translate(-50%,-26px) scale(1)}}
 @media (prefers-reduced-motion:reduce){.runb,.trkg{animation:none}}
+/* ===== 追捕戰：踏石過河 ===== */
+.arena.riv{min-height:300px;background-size:auto 100%;background-repeat:repeat-x;background-position:0% 100%;animation:rivpan 26s linear infinite alternate}
+@keyframes rivpan{to{background-position:100% 100%}}
+.riv .side{position:absolute;bottom:20px;flex-direction:column-reverse;transition:left .8s ease}
+.riv .chw{position:relative}
+.riv .sgbar{zoom:.62}
+.riv .nmtag{font-size:12px;padding:0 8px}
+.riv .chw .petbob{order:-1}
+.stn{position:absolute;left:50%;bottom:-14px;width:120%;height:30px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(ellipse at 50% 30%,#ddd7cb,#a59e92 55%,#766f64);box-shadow:0 5px 0 #5f594f,0 9px 8px #0006;z-index:-1}
+.stn::after{content:"";position:absolute;inset:-4px -9px -7px;border-radius:50%;border:3px solid #ffffffaa;animation:foam 1.8s ease-in-out infinite}
+@keyframes foam{50%{transform:scale(1.07);opacity:.35}}
+@media (prefers-reduced-motion:reduce){.arena.riv,.stn::after{animation:none}}
 </style>
 </head>
 <body data-font="ian">
@@ -826,14 +838,22 @@ function OUT(l){const b=ISLANDS[cur].b,[v,c]=FLEE[cur];
    15:[["😡","氣死我了——！你給我記住！","mon"],["🌫️",`${b}氣得跺腳，變成一團霧逃回殿裡。最後一片字靈碎片掉在地上 🧩（3/3）。三片碎片合在一起，終極殿的大門「轟」地打開了！`]]}[l]}
 const modeOf=()=>B.l===20?(B.i>=B.n/2?"rush":""):(MODE[B.l]||"");
 const DUM={classList:{add(){}}};
+function riverPlace(r,g,prev){
+  const A=$("#arena"),H=$("#hero"),M=$("#mon");if(!A||!H||!M)return;
+  const hS=H.closest(".side"),mS=M.closest(".side");if(!hS||!mS)return;
+  const W=A.clientWidth;if(!W)return;const hw=hS.offsetWidth,mw=mS.offsetWidth,ch=10+hw/2,lo=ch+112,hi=Math.max(lo,W-10-mw/2),cm=lo+(hi-lo)*r;
+  hS.style.left="10px";mS.style.left=(cm-mw/2)+"px";
+  if(prev!==undefined&&prev!==g){const el=g<prev?hS:mS;el.animate([{transform:"translateY(0)"},{transform:"translateY(-30px)",offset:.45},{transform:"translateY(0)"}],{duration:700,easing:"ease-out"})}
+}
 function trackUp(){
-  const T=B.n+3,g=Math.min(B.mhp,T),r=g/T,hx=4+(1-r)*56,mx=hx+9+r*28,prev=B.tg;B.tg=g;
+  const T=B.n+3,g=Math.min(B.mhp,T),r=g/T,prev=B.tg;B.tg=g;
   const tr=$("#trk");if(!tr)return;
-  if(!$("#trkH"))tr.innerHTML=`<div id="trkbox" style="position:relative;height:64px;margin:4px 0;border-radius:16px;overflow:hidden;background:linear-gradient(#bfe9ff,#e8f8d0)"><div class="trkg" style="position:absolute;left:0;right:0;bottom:8px;height:6px;background:repeating-linear-gradient(90deg,#8a6a3c 0 22px,transparent 22px 40px)"></div><span id="trkH" class="runb" style="position:absolute;bottom:12px;font-size:38px;transition:left .7s ease">🏃</span><span id="trkM" class="runb" style="position:absolute;bottom:12px;font-size:38px;transition:left .7s ease">👺</span><span id="trkD" style="position:absolute;bottom:18px;font-size:20px;opacity:.7;transition:left .7s ease">💨</span><span style="position:absolute;right:2%;top:4px;font-size:22px">🏁</span></div><div id="trkT" style="text-align:center;font-weight:900;font-size:18px"></div><div style="text-align:center;font-size:13px">答對追上一步，答錯被拉開一步</div>`;
-  $("#trkH").style.left=hx+"%";$("#trkM").style.left=mx+"%";$("#trkD").style.left=(mx+7)+"%";
-  $("#trkM").textContent=g<=0?"😵":"👺";$("#trkD").style.visibility=g<=0?"hidden":"visible";
+  if(!$("#trkT"))tr.innerHTML=`<div id="trkT" style="text-align:center;font-weight:900;font-size:18px"></div><div style="text-align:center;font-size:13px">答對追上一步，答錯被拉開一步</div>`;
+  riverPlace(r,g,prev);
+  {const A=$("#arena");if(A&&window.ResizeObserver)new ResizeObserver(()=>riverPlace(B.tg/(B.n+3),B.tg)).observe(A)}
+  document.querySelectorAll("#arena img").forEach(i=>{["load","error"].forEach(ev=>i.addEventListener(ev,()=>riverPlace(B.tg/(B.n+3),B.tg)))});
   const t=$("#trkT");t.textContent=g<=0?"🎉 抓到了！":g<=1?"🔥 快抓到了！只差 1 步":g>=T-1?"😝 越跑越遠了！":"距離 "+g+" 步";t.style.color=g<=1?"#d33":"";
-  if(prev!==undefined&&prev!==g){const p=document.createElement("span");p.className="trkpop";p.textContent=g<prev?(g<=0?"抓到你了！🎉":"追上一步！👏"):"被拉開了！😝";p.style.color=g<prev?"#1a8f3c":"#d33";$("#trkbox").appendChild(p);setTimeout(()=>p.remove(),1200)}
+  if(prev!==undefined&&prev!==g){const p=document.createElement("span");p.className="trkpop";p.textContent=g<prev?(g<=0?"抓到你了！🎉":"追上一步！👏"):"被拉開了！😝";p.style.cssText="top:30%;z-index:9;text-shadow:0 0 4px #fff,0 0 8px #fff;color:"+(g<prev?"#1a8f3c":"#d33");$("#arena").appendChild(p);setTimeout(()=>p.remove(),1200)}
 }
 function rushStart(){const T=B.l===20?9000:7000;B.t0=Date.now();B.rT=T;
   $("#trk").innerHTML=`<div class="bar" style="height:14px"><div id="tb" style="width:100%;background:linear-gradient(#ffd34d,#f33);transition:width ${T}ms linear"></div></div><div style="text-align:center;font-size:14px">⏱ 越快答對，傷害越高！</div>`;
@@ -875,9 +895,11 @@ function review(){const w=S.wrong.flatMap((a,k)=>a.map(id=>[k,(db(k)||[]).find(e
 
 /* ============ 戰鬥 ============ */
 // 戰鬥畫面角色高度（px）：主角 130；妖怪約為原本的 70%。覺得太大或太小，改這裡就好
-const SIZE={hero:130,minion:98,elite:105,boss:133};
+const SIZE={hero:130,minion:98,elite:105,boss:133,run:100};
+const RIVT=["","","#ffd9c0","#dfeadf","#e6efff","#cdbbea"];
 const MINION_TINT=[0,0,0,0]; // 每島 4 種小妖（a~d）輪流出場，不需變色；想讓重複出現的小妖變色，可改成 [0,40,-40,80]
 function mon(l){
+  if(MODE[l]==="chase")return `<img id="mon" src="images/chase/boss${cur+1}_run.webp" alt="" style="height:clamp(86px,16vw,128px)" onerror="this.onerror=null;this.src='${bs(cur)}'">`;
   if(isBoss(l)){const[f,e]=LOOK[l]||["",""];return `<span style="position:relative;display:inline-block"><img id="mon" src="${bs(cur)}" alt="" style="height:${l===20?SIZE.boss:SIZE.elite}px;filter:${l===20?"":"drop-shadow(0 0 10px #f33) "}${f}">${e?`<span style="position:absolute;top:-6px;right:-4px;font-size:30px">${e}</span>`:""}</span>`}
   const idx=l-1-Math.floor(l/5); // 一般關卡的順序 0~15
   return `<img id="mon" src="images/minions/minion_${cur+1}${"abcdef"[idx%6]}.webp" alt="" style="height:${SIZE.minion}px;filter:hue-rotate(${MINION_TINT[Math.floor(idx/6)%4]}deg)">`;
@@ -1014,14 +1036,14 @@ function qView(q){
 }
 function ask(){
   stopSay();
-  const I=ISLANDS[cur],q=B.qs[B.i],boss=isBoss(B.l),idx=(B.l-1-Math.floor(B.l/5))%6;
+  const I=ISLANDS[cur],q=B.qs[B.i],boss=isBoss(B.l),idx=(B.l-1-Math.floor(B.l/5))%6,chs=MODE[B.l]==="chase";
   const qh=qView(q);
-  const bg=`background-image:linear-gradient(#0002,#0006),url(images/islands/island${cur+1}.jpg);background-size:cover;background-position:center;`;
+  const bg=chs?`background-image:url(images/chase/river.jpg);background-color:${RIVT[cur]||"transparent"};background-blend-mode:multiply;`:`background-image:linear-gradient(#0002,#0006),url(images/islands/island${cur+1}.jpg);background-size:cover;background-position:center;`;
   $("#app").innerHTML=`<div id="stage" class="card p-3">
   <div class="font-black">第 ${B.l} 關${B.l===20?" 👺島主":boss?" 👹菁英":""}${MODE[B.l]?"　"+MODEN[MODE[B.l]]:""}${B.md==="rush"&&B.l===20?"　⏱限時搶答":""}</div>
-  <div id="arena" class="arena" style="${bg}"><div id="bh" class="bub l hidden"></div><div id="bm" class="bub r hidden"></div>
-    <div class="side"><div style="display:flex;align-items:flex-end;gap:2px"><img id="hero" src="${hb()}" alt="" style="height:${SIZE.hero}px">${petHtml()}</div><div id="hbar">${bar(B.max,B.hp,"g")}</div><span class="nmtag">${nm()}</span></div>
-    <div class="side">${mon(B.l)}<div id="mbar">${bar(B.n,B.mhp)}</div><span class="nmtag">${boss?I.b:LORE[cur].m[idx]}</span></div>
+  <div id="arena" class="arena${chs?" riv":""}" style="${bg}"><div id="bh" class="bub l hidden"></div><div id="bm" class="bub r hidden"></div>
+    <div class="side"><div class="${chs?"chw":""}" style="display:flex;align-items:flex-end;gap:2px">${chs?`<img id="hero" src="images/chase/hero_${S.hero||"boy"}_run.webp" alt="" style="height:clamp(86px,16vw,128px)" onerror="this.onerror=null;this.src='${hb()}'">`:`<img id="hero" src="${hb()}" alt="" style="height:${SIZE.hero}px">`}${petHtml()}${chs?`<i class="stn"></i>`:""}</div><div id="hbar">${bar(B.max,B.hp,"g")}</div><span class="nmtag">${nm()}</span></div>
+    <div class="side">${chs?`<span class="chw">${mon(B.l)}<i class="stn"></i></span>`:mon(B.l)}<div id="mbar">${bar(B.n,B.mhp)}</div><span class="nmtag">${boss?I.b:LORE[cur].m[idx]}</span></div>
   </div>
   <div class="text-center mt-3">${qh}<div class="mt-1">${spk("聽題目")}</div></div>
   <div class="grid grid-cols-2 gap-x-3 mt-2">`+q.opts.map(o=>`<button class="opt ${q.type==="fill"?"":"w"}" style="${q.type==="fill"?"":"font-size:28px"}" data-o="${o}" onclick="pick(this,'${o}')">${o}</button>`).join("")+`</div>${skillBar()}<div id="fb" class="text-center min-h-8 font-bold"></div></div>`;
