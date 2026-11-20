@@ -115,6 +115,15 @@ body[data-font=ian] .opt.w,body[data-font=zihi] .opt.w{font-size:clamp(18px,4.6v
 .stn::after{content:"";position:absolute;inset:-4px -9px -7px;border-radius:50%;border:3px solid #ffffffaa;animation:foam 1.8s ease-in-out infinite}
 @keyframes foam{50%{transform:scale(1.07);opacity:.35}}
 @media (prefers-reduced-motion:reduce){.arena.riv,.stn::after,.riv #hero,.riv #mon{animation:none!important}}
+.zone{border:3px solid var(--line);border-radius:14px;padding:8px;margin-top:8px;background:#fff8e1e6;position:relative;overflow:hidden}
+.zone.lk{filter:grayscale(.9);opacity:.6}
+.zrow{display:flex;flex-wrap:wrap;gap:6px 4px;justify-content:center;align-items:flex-start}
+.zrow .node{width:54px;height:54px;font-size:21px}.zrow .node.boss{width:68px;height:68px;font-size:28px}
+.spot{width:40px;height:40px;border-radius:50%;border:3px dashed #b7721c;background:#fff;cursor:pointer;font-size:20px;animation:pulse 1s infinite alternate}
+.spot.off{animation:none;opacity:.4;cursor:default}.spot.dn{animation:none;border-style:solid;background:#ffe9a8}
+.amb{position:absolute;inset:0;pointer-events:none;overflow:hidden}.amb i{position:absolute;font-style:normal;font-size:22px;opacity:.7;animation:drift 3s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translateY(-14px)}}
+@media (prefers-reduced-motion:reduce){.amb i,.spot{animation:none}}
 </style>
 </head>
 <body data-font="ian">
@@ -530,9 +539,10 @@ let vq=0;new MutationObserver(()=>{if(!vq)vq=requestAnimationFrame(()=>{vq=0;vsf
 /* ============ 基本工具 ============ */
 const KEY="idiomMythRPG_v1",$=s=>document.querySelector(s);
 const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
-const DEF={cleared:[0,0,0,0,0,0],wrong:[[],[],[],[],[],[]],relics:[0,0,0,0,0,0],seen:[0,0,0,0,0,0],name:"",hero:"",xp:0,dex:{},pets:{},pet:"",pdone:{},ch:{},dq:null,set:{auto:true,music:true,vol:.5,font:"ian",v:{}}};
+const DEF={cleared:[0,0,0,0,0,0],wrong:[[],[],[],[],[],[]],relics:[0,0,0,0,0,0],seen:[0,0,0,0,0,0],name:"",hero:"",xp:0,dex:{},pets:{},pet:"",pdone:{},ch:{},ex:{},zr:null,dq:null,set:{auto:true,music:true,vol:.5,font:"ian",v:{}}};
 let S;try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
-S=Object.assign(JSON.parse(JSON.stringify(DEF)),S||{});S.set=Object.assign({},DEF.set,S.set);S.set.v=S.set.v||{};document.body.dataset.font=S.set.font;
+S=Object.assign(JSON.parse(JSON.stringify(DEF)),S||{});S.set=Object.assign({},DEF.set,S.set);S.set.v=S.set.v||{};if(!S.zr)S.zr=S.cleared.map(c=>c/5|0); // 舊存檔：已通過的區域不再重複慶祝
+document.body.dataset.font=S.set.font;
 /* 題庫重新分配後：把錯題本裡的成語搬到它現在所在的島（每次載入都會檢查，重複執行不影響） */
 (()=>{const own={};for(let i=0;i<6;i++)(idiomDatabase["island"+(i+1)]||[]).forEach(e=>own[e[0]]=i);const nw=[[],[],[],[],[],[]];(S.wrong||[]).forEach(a=>(a||[]).forEach(id=>{const j=own[id];if(j!==undefined&&!nw[j].includes(id))nw[j].push(id)}));S.wrong=nw})();
 let cur=0,B=null;
@@ -649,21 +659,37 @@ function lobby(){
 }
 
 /* ============ 各島 20 關卷軸地圖 ============ */
+const ZONES=[["山腳猴林","蟠桃園","筋斗雲崖","水簾洞口"],["珊瑚淺灘","貝殼迷宮","沉船走廊","龍宮寶殿"],["地瓜山路","熔岩河谷","煙霧斜坡","火焰山頂"],["桃花小徑","迷霧深林","鏡面湖畔","九尾石階"],["雲梯入口","書頁雲海","墨香迴廊","崑崙雲殿"],["寂靜長廊","回聲之門","影子書房","終極殿前"]];
+const AMB=["🍃","🫧","🔥","🌫️","☁️","🌑"];
+function sfx(f){try{if(!S.set.music)return;const a=sfx.c||(sfx.c=new(window.AudioContext||window.webkitAudioContext)());[f,f*1.25,f*1.5].forEach((q,i)=>{const o=a.createOscillator(),g=a.createGain();o.frequency.value=q;o.connect(g);g.connect(a.destination);const t=a.currentTime+i*.12;g.gain.setValueAtTime(.08,t);g.gain.exponentialRampToValueAtTime(.001,t+.25);o.start(t);o.stop(t+.3)})}catch(e){}}
+function explore(l){const k=cur+"_"+l;if(S.ex[k])return;S.ex[k]=1;
+ const w=S.wrong[cur].map(id=>db(cur).find(x=>x[0]===id)).filter(Boolean).slice(0,2);
+ if(w.length&&(l/5|0)%2===1){save();return qzStart({title:"✨ 探索：發光的錯題",xp:15,rv:1,again:"review()",qs:w.map(e=>({...makeQ(e,db(cur)),isl:cur})),cb:(q,ok)=>{if(ok)S.wrong[q.isl]=S.wrong[q.isl].filter(x=>x!==q.e[0])}})}
+ const g=gainXp(20);save();sfx(660);playStory(sl(cur,[["✨","你在「"+ZONES[cur][(l/5|0)]+"」發現了一個小祕密！"],["🐾",pk(LORE[cur].gs)]]),()=>{toast("🌟 探索獎勵 +"+g+" EXP");map()})}
 function map(){
   B=null;view("main");bgm("island"+(cur+1),"map");
-  const I=ISLANDS[cur],c=S.cleared[cur];TXT=I.n+"。"+I.t;
+  const I=ISLANDS[cur],c=S.cleared[cur],Z=ZONES[cur],z=Math.min(3,c/5|0),done=c>=20,fr=fragN(cur);TXT=I.n+"。"+I.t;
+  if((c/5|0)>S.zr[cur]){S.zr[cur]=c/5|0;save();sfx(523);toast("✨ 區域恢復："+Z[(c/5|0)-1]+"！")}
+  const sat=(.3+.7*c/20).toFixed(2),amb=(done?["🌸","✨","🌸"]:[AMB[cur],AMB[cur],"✨"]);
   let h=`<div class="flex gap-2 overflow-x-auto pb-2"><button class="tab" onclick="lobby()">🌏 總地圖</button>`+ISLANDS.map((x,i)=>`<button class="tab ${i===cur?"on":""}" onclick="cur=${i};map()">${x.n}</button>`).join("")+`</div>
-  <div class="card mt-2 p-3 flex items-center gap-3"><img src="${bs(cur)}" alt="" style="height:90px">
-  <div class="flex-1"><div class="font-black text-2xl">${I.n}</div><div class="text-base">魔王：${I.b}　法寶：${I.r} ${S.relics[cur]?"✅":"🔒"}</div>
-  <div class="text-base">${I.t}</div><div class="text-base">進度 ${c} / 20　錯題本 ${S.wrong[cur].length} 題</div></div>
+  <div class="card mt-2 p-3 flex items-center gap-3"><img src="${bs(cur)}" alt="" style="height:90px;${done?"":"filter:saturate(.6)"}">
+  <div class="flex-1"><div class="font-black text-2xl">${I.n} ${done?"🌸已恢復":""}</div><div class="text-base">魔王：${I.b}　法寶：${I.r} ${S.relics[cur]?"✅":"🔒"}</div>
+  <div class="text-base font-bold" style="color:var(--red)">${done?"島嶼恢復了！去找下一座島的朋友吧":"🎯 目標："+(c<20?"闖過「"+Z[z]+"」，找回字靈碎片 "+fr+"/3":"")}</div><div class="text-base">進度 ${c} / 20　錯題本 ${S.wrong[cur].length} 題</div></div>
   <div class="flex flex-col items-center gap-1">${spk("")}<img src="${rs(cur)}" alt="" style="height:56px;${S.relics[cur]?"":"filter:brightness(0) opacity(.35)"}"></div></div>
-  <div class="card mt-2 map" style="background-image:linear-gradient(#fff3d8b0,#fff3d8b0),url(images/islands/island${cur+1}.jpg);background-size:cover;background-position:center"><div class="row">`;
-  for(let l=1;l<=20;l++){
-    const st=l<=c?"done":l===c+1?"cur":"lock",b=isBoss(l),lab=l===20?"👺":b?"👹":l;
-    h+=`<div class="text-center"><button class="node ${b?"boss":""} ${st}" ${st==="lock"?"disabled":""} onclick="start(${l})">${st==="done"&&!b?"✓":lab}</button><div><span class="lab">${l===20?"島主":b?"菁英":"第"+l+"關"}</span></div></div>${l<20?'<div class="seg"></div>':""}`;
+  ${done?"":`<div class="text-center mt-2"><button class="btn" onclick="start(${c+1})">▶ 繼續冒險：第 ${c+1} 關</button></div>`}
+  <div class="card mt-2 p-2" style="position:relative;background:linear-gradient(#fff3d8${done?"60":"c0"},#fff3d8${done?"60":"c0"}),url(images/islands/island${cur+1}.jpg);background-size:cover;background-position:center"><div style="position:absolute;inset:0;border-radius:12px;backdrop-filter:saturate(${sat});pointer-events:none"></div><div class="amb">${[8,30,52,74,90,18].map((x,i)=>`<i style="left:${x}%;top:${(i*37)%80+5}%;animation-delay:${i*.4}s">${amb[i%3]}</i>`).join("")}</div>`;
+  for(let k=0;k<4;k++){
+    const lk=c<k*5,sp=k*5+2,zd=c>=k*5+5;
+    h+=`<div class="zone ${lk?"lk":""}" style="position:relative"><div class="font-black text-lg text-center">${lk?"🔒":zd?"🌸":"🧭"} 第 ${k+1} 區：${Z[k]} <span class="text-base">（${Math.max(0,Math.min(5,c-k*5))}/5）</span></div><div class="zrow">`;
+    for(let j=1;j<=5;j++){
+      const l=k*5+j,st=l<=c?"done":l===c+1?"cur":"lock",b=isBoss(l),lab=l===20?"👺":b?"👹":l;
+      h+=`<div class="text-center"><button class="node ${b?"boss":""} ${st}" ${st==="lock"?"disabled":""} onclick="start(${l})">${st==="done"&&!b?"✓":lab}</button><div><span class="lab">${l===20?"島主":b?"菁英":"第"+l+"關"}</span></div></div>`;
+      if(l===sp){const on=c>=sp&&!S.ex[cur+"_"+sp];h+=`<div class="text-center"><button class="spot ${on?"":S.ex[cur+"_"+sp]?"dn":"off"}" ${on?"":"disabled"} onclick="explore(${sp})">${S.ex[cur+"_"+sp]?"🌟":on?"✨":"❔"}</button><div><span class="lab">探索</span></div></div>`}
+    }
+    h+=`</div></div>`;
   }
-  $("#app").innerHTML=h+`</div></div><p class="text-center text-base mt-2">← 左右滑動卷軸地圖 →　（5、10、15 關為菁英魔王，20 關為島主）</p>`;
-  const k=document.querySelector(".node.cur");if(k)k.scrollIntoView({inline:"center",block:"nearest"});
+  $("#app").innerHTML=h+`</div><p class="text-center text-base mt-2">✨ 探索點：通過第 2、7、12、17 關後開啟，有小祕密和 EXP！　5、10、15 關為菁英魔王，20 關為島主</p>`;
+  const k=document.querySelector(".node.cur");if(k)k.scrollIntoView({block:"center",behavior:"smooth"});
 }
 
 /* ============ 出題 ============ */
