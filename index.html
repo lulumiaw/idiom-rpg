@@ -484,8 +484,8 @@ const STORY=[
 ["⚔️","只有學會島上的成語、打敗六位妖怪、蒐集六件法寶，才能讓成語世界恢復正常，{n}也才能回到教室。出發吧，{n}！","images/world_map.jpg"]];
 const ENDING=[
 ["🌈","六件法寶一起發出金光，分裂的島嶼慢慢合在一起，成語世界恢復正常了！人類世界的大家也都學會正確使用成語。","images/islands/island6.jpg"],
-["📖","課本裡那個發光的神祕字，原來是「字靈」。他輕輕說：「謝謝你，沒有被『算了吧』打敗。」","images/islands/island6.jpg"],
-["🏫","光芒一閃，{n}回到了教室。課本上的神祕字變成一朵小花，安靜地睡在書頁裡。謝謝你，成語大聖{n}！"]];
+["📖","課本裡那個發光的神祕字，原來是「字靈」。他輕輕說：「謝謝你，沒有被『算了吧』打敗。」","images/islands/island6.jpg","spirit"],
+["🏫","光芒一閃，{n}回到了教室。課本上的神祕字變成一朵小花，安靜地睡在書頁裡。謝謝你，成語大聖{n}！","images/islands/island6.jpg","flower"]];
 
 /* ============ 各島劇情 LORE ============
  in：第一次進島的故事（魔王為什麼來搶成語島）　mid：第 5、10、15 關首次通關後的小插曲　ed：打敗島主後的告白
@@ -613,12 +613,12 @@ function drawStory(){
   $("#scene").innerHTML=`<div class="scn" style="background-image:linear-gradient(#0006,#000b),url(${s[2]||"images/world_map.jpg"})">
   <img src="${hs()}" style="position:absolute;left:3%;bottom:36%;height:min(36vh,320px)" alt="">
   ${s[3]==="mon"?`<img src="${ST.list[0][1]==="這次，我不逃了。"?"images/monsters/boss"+(cur+1)+"_relieved.webp":bs(cur)}" onerror="this.onerror=null;this.src='${bs(cur)}'" style="position:absolute;right:4%;bottom:38%;height:min(34vh,300px)" alt="">`:""}
-  <div class="card p-4" style="position:absolute;left:3%;right:3%;bottom:3%"><div class="flex items-center gap-2"><span class="text-4xl">${s[0]}</span><span class="tab">${s[3]==="mon"?ISLANDS[cur].b:s[3]==="hero"?nm():"旁白"}</span></div>
+  ${/^(spirit|flower)$/.test(s[3]||"")?`<img src="images/chars/${s[3]==="flower"?"spirit_flower":"spirit"}.webp" alt="" style="position:absolute;right:5%;bottom:38%;height:min(34vh,300px)">`:""}<div class="card p-4" style="position:absolute;left:3%;right:3%;bottom:3%"><div class="flex items-center gap-2"><span class="text-4xl">${s[0]}</span><span class="tab">${s[3]==="mon"?ISLANDS[cur].b:s[3]==="hero"?nm():/^(spirit|flower)$/.test(s[3]||"")?"字靈":"旁白"}</span></div>
   <p class="text-xl md:text-2xl my-2" style="line-height:1.7">${t}</p>
   <div class="flex gap-2 flex-wrap items-center">${spk("重聽")}${ST.i>0?'<button class="tab" onclick="stepStory(-1)">◀ 上一頁</button>':""}
   <button class="btn" onclick="stepStory(1)">${last?"繼續 ▶":"下一頁 ▶"}</button>${last?"":'<button class="tab" onclick="ST.done()">略過</button>'}
   <span class="text-base">${ST.i+1}/${ST.list.length}</span></div></div></div>`;
-  auto(t,s[3]);
+  auto(t,/^(spirit|flower)$/.test(s[3]||"")?"girl":s[3]);
 }
 
 /* ============ 設定視窗 ============ */
@@ -721,7 +721,7 @@ function start(l){
   }else{
     picks=weak(pool,3);
     TXT=picks.map(e=>`${e[0]}。意思是：${e[1]}。造句：${e[2]}`).join(" ");
-    $("#app").innerHTML=`<div class="card p-4"><h2 class="text-2xl font-black mb-3">📖 第 ${l} 關・戰前修煉秘笈</h2>`+picks.map(e=>`<div class="mb-3 p-3 rounded-xl" style="background:#0001"><div class="text-3xl font-black text-center">${e[0]}</div><div class="mt-1"><b>解釋：</b>${e[1]}</div><div><b>造句：</b>${e[2]}</div></div>`).join("")+gossipCard()+`<div class="text-center">${spk("朗讀秘笈")} <button class="btn" id="go">修煉完成，開始挑戰！</button> <button class="tab" onclick="map()">回地圖</button></div></div>`;
+    $("#app").innerHTML=`<div class="card p-4"><h2 class="text-2xl font-black mb-3">📖 第 ${l} 關・戰前修煉秘笈 <img src="images/chars/spirit_worry.webp" alt="" style="height:56px;display:inline-block;vertical-align:middle"></h2>`+picks.map(e=>`<div class="mb-3 p-3 rounded-xl" style="background:#0001"><div class="text-3xl font-black text-center">${e[0]}</div><div class="mt-1"><b>解釋：</b>${e[1]}</div><div><b>造句：</b>${e[2]}</div></div>`).join("")+gossipCard()+`<div class="text-center">${spk("朗讀秘笈")} <button class="btn" id="go">修煉完成，開始挑戰！</button> <button class="tab" onclick="map()">回地圖</button></div></div>`;
     $("#go").onclick=()=>battle(l,picks);
     auto(GS,"mon");TR="nar";if(S.set.auto)say(TXT,"nar",1);
   }
@@ -973,6 +973,7 @@ const MORE=[
   13:[["💭","影子小妖縮在牆角：「我只是把大家的『算了吧』收集起來……我也不知道為什麼收了這麼多。」"]],
   18:[["👁️","最後一道門前，{n}摸摸口袋裡的六件法寶，它們暖暖的。「我們一起，再試一次。」","mon"]]}];
 MORE.forEach((m,i)=>Object.assign(LORE[i].mid,m));
+LORE.forEach(l=>{const m=l.mid[8];if(m&&m[0])m[0][2]="spirit"}); // 第 8 關的字靈小插曲，由字靈自己說話
 
 /* ============ 分支結局：最後選一句話，決定結局 ============ */
 const BG6="images/islands/island6.jpg";
@@ -1025,7 +1026,7 @@ function mline(ev){
 const HS=["fly","arc","rain","slash","dash","spiral","bounce","split","meteor","wave","burst"],MS=["fly","arc","dash","spiral","bounce","split","wave"],MB=["fly","rain","zap","dash","meteor","burst","wave","split"];
 // 連擊大招：每島有自己的名字與招式
 const ULT=[{n:"蟠桃雨",st:"rain",e:"🍑"},{n:"墨汁海嘯",st:"wave",e:"🌊"},{n:"烈焰流星",st:"meteor",e:"☄️"},{n:"幻影千鏡",st:"burst",e:"🔮"},{n:"雲海飛龍",st:"spiral",e:"🌀"},{n:"字靈聖光",st:"split",e:"🌟"}];
-function ultBanner(n){const a=$("#arena");if(!a)return;const e=fxEl("✨ "+n+" ✨",a.clientWidth/2,30,30);e.style.cssText+="font-weight:900;color:#ffe066;text-shadow:0 2px 6px #000;white-space:nowrap;z-index:5";e.animate([{transform:T("scale(.4)"),opacity:0},{transform:T("scale(1.1)"),opacity:1,offset:.2},{transform:T("scale(1)"),opacity:1,offset:.8},{transform:T("scale(1)"),opacity:0}],{duration:1500}).onfinish=()=>e.remove()}
+function ultBanner(n,d){const a=$("#arena");if(!a)return;if(!d)toast('<img src="images/chars/spirit_happy.webp" alt="" style="height:34px;display:inline-block;vertical-align:middle"> 字靈：成語連擊成功！');const e=fxEl((d||"✨")+" "+n+" "+(d||"✨"),a.clientWidth/2,30,30);e.style.cssText+="font-weight:900;color:#ffe066;text-shadow:0 2px 6px #000;white-space:nowrap;z-index:5";e.animate([{transform:T("scale(.4)"),opacity:0},{transform:T("scale(1.1)"),opacity:1,offset:.2},{transform:T("scale(1)"),opacity:1,offset:.8},{transform:T("scale(1)"),opacity:0}],{duration:1500}).onfinish=()=>e.remove()}
 const HE=[["🍑","🌴","🥥","⭐","🪄"],["🌊","🐚","🫧","🔱","🐠"],["🌀","🔥","☄️","🌋","💥"],["🔮","✨","🌸","🪞","🍃"],["⚔️","☁️","📖","🖌️","🌈"],["⚡","🌟","💫","📜","🔆"]],ME=[["🍌","🐒","🥜","🪨","💢"],["🖤","🦑","🫧","🦀","🌊"],["🔥","💢","☄️","🌋","🍠"],["🍃","💨","🌫️","🪞","🐇"],["💬","🈳","🍜","🖋️","📄"],["👁️","💀","🌀","💭","🌑"]];
 const pk=a=>a[Math.random()*a.length|0],T=s=>`translate(-50%,-50%) ${s}`;
 const fxEl=(t,x,y,s)=>{const d=document.createElement("div");d.className="fx";d.textContent=t;d.style.cssText=`left:${x}px;top:${y}px;font-size:${s||40}px`;$("#arena").appendChild(d);return d};
@@ -1088,8 +1089,11 @@ function ask(){
   traits();
 }
 /* ---- 敵人特色（一般關第 8 關起、島主第 20 關前半）+ 字靈鼓勵（卡太久會幫你刪掉一個錯誤選項）---- */
+const BSK=[["偷桃雷雨","🍑"],["墨汁海嘯","🌊"],["烈焰衝撞","🔥"],["幻影分身","🌫️"],["吞字大口","😋"],["算了吧之聲","🌀"]];
 const TRAIT=["","shuffle","burn","shuffle","eat","voice"];
 function traits(){
+  if(B.l===20&&B.i===B.n/2){ultBanner("第二階段・限時搶答！","⚡");const m=$("#mon");if(m)m.style.filter="drop-shadow(0 0 16px #f33) brightness(1.1)";talk("m","接下來，我要認真了！",2800)}
+  if(B.hp===1&&B.i>0&&!B.wr){B.wr=1;toast('<img src="images/chars/spirit_worry.webp" alt="" style="height:34px;display:inline-block;vertical-align:middle"> 字靈：別怕，我陪你，再試一次！')}
   const q=B.qs[B.i],i=B.i,L=B.l,on=!B.md&&(L===20?i<B.n/2:(L>=8&&!isBoss(L)));if(!q||q.type==="scr")return;
   const bad=()=>[...document.querySelectorAll(".opt")].filter(b=>!b.classList.contains("gone")&&b.dataset.o!==q.ans);
   const later=(ms,f)=>setTimeout(()=>{if(B&&B.i===i&&!B.lock)f()},ms);
@@ -1122,7 +1126,7 @@ function pick(btn,o){
     if(petK()==="d"){if(B.combo>0)toast("🐾 鼓勵：連擊沒有中斷！")}else B.combo=0;btn.classList.add("no");
     if(!S.wrong[cur].includes(id))S.wrong[cur].push(id);
     if(B.clear)B.qs.push(makeQ(q.e,db(cur))); // 一般關：答錯的成語換個問法再考一次
-    const mt=mline("miss");talk("m",mt,2800);say(mt,"mon");
+    if(boss&&Math.random()<.6){const k=BSK[cur];ultBanner(k[0],k[1])}const mt=mline("miss");talk("m",mt,2800);say(mt,"mon");
     atk(pk(boss?MB:MS),pk(ME[cur]),M,H,()=>{
       if(B.sh>0){B.sh--;const P=$("#pet");if(P)P.animate([{transform:"scaleX(-1) scale(1.5)"},{transform:"scaleX(-1)"}],{duration:450});$("#fb").textContent="🐾 護衛擋下了攻擊！正確是「"+id+"」";toast("🛡 "+petName(S.pet)+"幫你擋下一次攻擊！");return}
       B.hp--;react(H);H.classList.add("shake");$("#stage").classList.add("shake");$("#hbar").innerHTML=bar(B.max,B.hp,"g");
@@ -1150,7 +1154,7 @@ function win2(l){
   if(l<20){
     const ix=(l-1-Math.floor(l/5))%6,pid=cur+"abcdef"[ix],can=!isBoss(l)&&!S.pets[pid];
     TXT=`${nm()}，第${l}關通過！`;
-    $("#app").innerHTML=`<div class="card p-6 text-center"><img src="${hs()}" alt="" style="height:140px;margin:auto"><h2 class="text-3xl font-black my-2">第 ${l} 關通過！</h2>${SUM}${can?`<div class="my-3 p-3 rounded-xl" style="background:#fff6;border:3px dashed var(--line)"><span class="petbob"><img src="${petImg(pid)}" alt="" style="height:84px;margin:auto"></span><div class="font-bold my-1">🐾 ${petName(pid)}不想打了…好像想跟你當朋友！</div><button class="btn" onclick="tame('${pid}',${l})">🤝 伸手招降</button></div>`:""}<div class="mt-4"><button class="btn" onclick="start(${l+1})">下一關</button> <button class="tab" onclick="map()">回地圖</button></div></div>`;
+    $("#app").innerHTML=`<div class="card p-6 text-center"><img src="${hs()}" alt="" style="height:140px;margin:auto"><h2 class="text-3xl font-black my-2">第 ${l} 關通過！ <img src="images/chars/spirit_happy.webp" alt="" style="height:64px;display:inline-block;vertical-align:middle"></h2>${SUM}${can?`<div class="my-3 p-3 rounded-xl" style="background:#fff6;border:3px dashed var(--line)"><span class="petbob"><img src="${petImg(pid)}" alt="" style="height:84px;margin:auto"></span><div class="font-bold my-1">🐾 ${petName(pid)}不想打了…好像想跟你當朋友！</div><button class="btn" onclick="tame('${pid}',${l})">🤝 伸手招降</button></div>`:""}<div class="mt-4"><button class="btn" onclick="start(${l+1})">下一關</button> <button class="tab" onclick="map()">回地圖</button></div></div>`;
     return auto(TXT);
   }
   const first=!S.relics[cur];S.relics[cur]=1;save();
@@ -1159,7 +1163,7 @@ function win2(l){
   <div style="display:grid;place-items:center;height:230px"><img class="cap" src="${bs(cur)}" alt="" style="grid-area:1/1;height:200px"><img id="rl" class="glow hidden" src="${rs(cur)}" alt="" style="grid-area:1/1;height:190px"></div>
   <div id="rt" class="hidden text-2xl font-black">獲得法寶：${I.r}！<div style="font-size:17px;font-weight:700">${RELIC_FX[cur]}</div></div>${SUM}
   <div class="mt-4"><button class="btn" id="nx">繼續</button></div></div>`;
-  setTimeout(()=>{$("#rl").classList.remove("hidden");$("#rt").classList.remove("hidden");auto(TXT)},1500);
+  setTimeout(()=>{const x=$("#rl"),y=$("#rt");if(!x||!y)return;x.classList.remove("hidden");y.classList.remove("hidden");auto(TXT)},1500);
   $("#nx").onclick=()=>{const nx=()=>S.relics.every(Boolean)&&first?finale(false):map();first?playStory(sl(cur,[["🛡️","這次，我不逃了。","mon"]].concat(LORE[cur].ed)),nx):nx()};
 }
 
