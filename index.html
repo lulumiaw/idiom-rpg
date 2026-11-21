@@ -612,7 +612,7 @@ function drawStory(){
   view("scene");bgm("story","lobby");TXT=t;
   $("#scene").innerHTML=`<div class="scn" style="background-image:linear-gradient(#0006,#000b),url(${s[2]||"images/world_map.jpg"})">
   <img src="${hs()}" style="position:absolute;left:3%;bottom:36%;height:min(36vh,320px)" alt="">
-  ${s[3]==="mon"?`<img src="${bs(cur)}" style="position:absolute;right:4%;bottom:38%;height:min(34vh,300px)" alt="">`:""}
+  ${s[3]==="mon"?`<img src="${ST.list[0][1]==="這次，我不逃了。"?"images/monsters/boss"+(cur+1)+"_relieved.webp":bs(cur)}" onerror="this.onerror=null;this.src='${bs(cur)}'" style="position:absolute;right:4%;bottom:38%;height:min(34vh,300px)" alt="">`:""}
   <div class="card p-4" style="position:absolute;left:3%;right:3%;bottom:3%"><div class="flex items-center gap-2"><span class="text-4xl">${s[0]}</span><span class="tab">${s[3]==="mon"?ISLANDS[cur].b:s[3]==="hero"?nm():"旁白"}</span></div>
   <p class="text-xl md:text-2xl my-2" style="line-height:1.7">${t}</p>
   <div class="flex gap-2 flex-wrap items-center">${spk("重聽")}${ST.i>0?'<button class="tab" onclick="stepStory(-1)">◀ 上一頁</button>':""}
@@ -716,10 +716,10 @@ function start(l){
   if(isBoss(l)){
     const n=l===20?8:5;
     const w=shuf(S.wrong[cur]).map(id=>pool.find(x=>x[0]===id)).filter(Boolean).slice(0,n);
-    picks=w.concat(shuf(pool.filter(x=>!w.includes(x))).slice(0,n-w.length));
+    picks=w.concat(weak(pool,n-w.length,w));
     chIn(l,()=>battle(l,picks));
   }else{
-    picks=shuf(pool).slice(0,3);
+    picks=weak(pool,3);
     TXT=picks.map(e=>`${e[0]}。意思是：${e[1]}。造句：${e[2]}`).join(" ");
     $("#app").innerHTML=`<div class="card p-4"><h2 class="text-2xl font-black mb-3">📖 第 ${l} 關・戰前修煉秘笈</h2>`+picks.map(e=>`<div class="mb-3 p-3 rounded-xl" style="background:#0001"><div class="text-3xl font-black text-center">${e[0]}</div><div class="mt-1"><b>解釋：</b>${e[1]}</div><div><b>造句：</b>${e[2]}</div></div>`).join("")+gossipCard()+`<div class="text-center">${spk("朗讀秘笈")} <button class="btn" id="go">修煉完成，開始挑戰！</button> <button class="tab" onclick="map()">回地圖</button></div></div>`;
     $("#go").onclick=()=>battle(l,picks);
@@ -1085,10 +1085,25 @@ function ask(){
   if(B.md==="chase")trackUp();if(B.md==="rush")rushStart();if(q.type==="scr")scrUI(q);
   if(B.i===0&&petK()==="e"){const bad=[...document.querySelectorAll(".opt")].filter(b=>b.dataset.o!==q.ans);if(bad.length>1){pk(bad).classList.add("gone");toast("👁 "+petName(S.pet)+"的靈眼看穿了一個錯誤選項！")}}
   if(B.i===0)talk("m",mline("open"),3200);else if(B.hp===1&&!B.sofl){B.sofl=1;talk("m",mline("hurt"),3000)}
+  traits();
 }
+/* ---- 敵人特色（一般關第 8 關起、島主第 20 關前半）+ 字靈鼓勵（卡太久會幫你刪掉一個錯誤選項）---- */
+const TRAIT=["","shuffle","burn","shuffle","eat","voice"];
+function traits(){
+  const q=B.qs[B.i],i=B.i,L=B.l,on=!B.md&&(L===20?i<B.n/2:(L>=8&&!isBoss(L)));if(!q||q.type==="scr")return;
+  const bad=()=>[...document.querySelectorAll(".opt")].filter(b=>!b.classList.contains("gone")&&b.dataset.o!==q.ans);
+  const later=(ms,f)=>setTimeout(()=>{if(B&&B.i===i&&!B.lock)f()},ms);
+  B.hint=later(12000,()=>{const x=bad();if(x.length>1){pk(x).classList.add("gone");toast("✨ 字靈：再想一想，我先幫你擋掉一個！")}});
+  if(!on)return;const t=TRAIT[cur];
+  if(t==="shuffle")later(3000,()=>{const g=document.querySelector("#app .grid");if(g){shuf([...g.children]).forEach(c=>g.appendChild(c));toast(cur===1?"🌊 墨汁攪亂了選項！":"🦊 幻術換了選項位置！")}});
+  if(t==="eat")later(4000,()=>{const x=bad();if(x.length>1){pk(x).classList.add("gone");toast("😋 小饕餮咕嚕～吃掉了一個選項！")}});
+  if(t==="voice")later(6000,()=>{talk("m","算了吧……你不累嗎？",3200);toast("👁 「算了吧」的聲音出現了，別被它騙到！")});
+  if(t==="burn"){toast("🔥 火焰逼近！15 秒內作答");const el=$("#arena");if(el)el.insertAdjacentHTML("beforebegin",'<div class="bar" style="height:10px"><div id="tb2" style="width:100%;height:100%;background:#f55;transition:width 15s linear"></div></div>');requestAnimationFrame(()=>requestAnimationFrame(()=>{const e=$("#tb2");if(e)e.style.width="0"}));B.rt=setTimeout(()=>{if(B&&B.i===i&&!B.lock)pick(DUM,"")},15000)}
+}
+function weak(pool,n,ex){const w=new Set(S.wrong[cur]);return pool.filter(x=>!(ex||[]).includes(x)).map(e=>[(w.has(e[0])?-50:0)+Math.min(S.dex[e[0]]||0,6)*4+Math.random()*7,e]).sort((a,b)=>a[0]-b[0]).slice(0,n).map(x=>x[1])}
 function pick(btn,o){
   if(B.lock)return;B.lock=true;
-  clearTimeout(B.rt);
+  clearTimeout(B.rt);clearTimeout(B.hint);
   const q=B.qs[B.i],ok=o===q.ans,boss=isBoss(B.l),id=q.e[0],H=$("#hero"),M=$("#mon");const fast=B.md==="rush"&&ok&&Date.now()-B.t0<B.rT*.5;if(fast)toast("⚡ 快答！傷害加倍");
   document.querySelectorAll(".opt").forEach(b=>{if(b.textContent===q.ans)b.classList.add("ok")});
   if(ok){
@@ -1111,12 +1126,12 @@ function pick(btn,o){
     atk(pk(boss?MB:MS),pk(ME[cur]),M,H,()=>{
       if(B.sh>0){B.sh--;const P=$("#pet");if(P)P.animate([{transform:"scaleX(-1) scale(1.5)"},{transform:"scaleX(-1)"}],{duration:450});$("#fb").textContent="🐾 護衛擋下了攻擊！正確是「"+id+"」";toast("🛡 "+petName(S.pet)+"幫你擋下一次攻擊！");return}
       B.hp--;react(H);H.classList.add("shake");$("#stage").classList.add("shake");$("#hbar").innerHTML=bar(B.max,B.hp,"g");
-      $("#fb").textContent="💥 被打中了！正確是「"+id+"」";
+      $("#fb").innerHTML=`<span style="display:inline-flex;align-items:center;gap:6px;text-align:left"><img src="images/chars/spirit_sad.webp" alt="" style="height:54px"><span>💥 沒關係，再試一次！正確是<b>「${id}」</b>：${q.e[1]}</span></span>`;
     });
   }
   if(B.md==="chase"){if(!ok){B.mhp=Math.min(B.n+3,B.mhp+1);$("#mbar").innerHTML=bar(B.n,B.mhp)}trackUp()}
   save();
-  B.timer=setTimeout(()=>{if(B.hp<=0)return lose();if(B.clear?B.mhp<=0:B.i+1>=B.n)return win();B.i++;ask()},ok?1900:3000);
+  B.timer=setTimeout(()=>{if(B.hp<=0)return lose();if(B.clear?B.mhp<=0:B.i+1>=B.n)return win();B.i++;ask()},ok?1900:4500);
 }
 function lose(){
   const l=B.l;B.fight=false;stopSay();TXT=`${nm()}，仙力耗盡了！錯的成語已放進錯題本，再挑戰一次吧！`;
