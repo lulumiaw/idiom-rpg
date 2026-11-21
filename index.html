@@ -121,6 +121,7 @@ body[data-font=ian] .opt.w,body[data-font=zihi] .opt.w{font-size:clamp(18px,4.6v
 .zrow .node{width:54px;height:54px;font-size:21px}.zrow .node.boss{width:68px;height:68px;font-size:28px}
 .spot{width:40px;height:40px;border-radius:50%;border:3px dashed #b7721c;background:#fff;cursor:pointer;font-size:20px;animation:pulse 1s infinite alternate}
 .spot.off{animation:none;opacity:.4;cursor:default}.spot.dn{animation:none;border-style:solid;background:#ffe9a8}
+.mc{min-height:76px;padding:8px;border:3px solid #b7721c;border-radius:12px;background:linear-gradient(#fff3d8,#f5d08a);font-size:20px;font-weight:900;cursor:pointer}.mc.mn{font-size:17px;font-weight:700;background:#fff}.mc.up{background:#e8f4ff;border-color:#3b82f6}.mc.ok{background:#d6f5d6;border-color:#2e9b2e;opacity:.85}
 .amb{position:absolute;inset:0;pointer-events:none;overflow:hidden}.amb i{position:absolute;font-style:normal;font-size:22px;opacity:.7;animation:drift 3s ease-in-out infinite alternate}
 @keyframes drift{to{transform:translateY(-14px)}}
 @media (prefers-reduced-motion:reduce){.amb i,.spot{animation:none}}
@@ -856,20 +857,20 @@ function untamed(pid,l){
 }
 
 /* ============ 菁英逃跑連載＋小遊戲 ============
-   第 5 關追捕戰、第 10 關成語重組、第 15 關限時搶答、第 20 關前半題目、後半限時搶答。
+   第 5 關追捕戰、第 10 關成語重組、第 15 關翻牌配對、第 20 關三階段（追捕→翻牌→最後決戰）。
    FLEE：每島魔王的逃跑方式與留下的線索（[逃跑方式, 紙條]）；想改劇情改 CH_IN / OUT。 */
 const FLEE=[["翻上筋斗雲","別追了！來蟠桃園深處找我！"],["鑽進海底漩渦","來龍宮最深的地方找我！"],["躲進滾滾熔岩煙","火焰山頂，我們再比一次！"],["消失在迷霧裡","跟著狐狸腳印，來霧林深處！"],["鑽進雲海","崑崙雲殿，我等你。"],["化成一團黑影","終極殿的門就在前面。"]];
-const MODE={5:"chase",10:"scr",15:"rush"},MODEN={chase:"🏃追捕戰",scr:"🧩成語重組",rush:"⏱限時搶答"};
+const MODE={5:"chase",10:"scr",15:"match"},MODEN={chase:"🏃追捕戰",scr:"🧩成語重組",match:"🃏翻牌配對"};
 const LOOK={10:["hue-rotate(80deg) saturate(1.3)","🎩"],15:["sepia(.5) saturate(.8)","🩹🤕"],20:["drop-shadow(0 0 14px gold) brightness(1.1)","✨"]};
 const CH_IN={5:"哼，我只是來試試你，不用太認真啦！",10:"上次是我大意！搶走我字靈碎片的帳，今天一起算！我還換了裝扮喔！",15:"你、你竟然打敗我兩次！手下們，通通給我上！",20:"我不逃了……今天，我要面對真正的自己。"};
 const fragN=i=>[5,10,15].filter(l=>S.cleared[i]>=l).length;
 function chIn(l,go){const k=cur+"_"+l;if(!CH_IN[l]||S.ch[k])return go();S.ch[k]=1;save();
-  playStory(sl(cur,[["👺",CH_IN[l],"mon"],["⚔️",l===20?"最後一戰！前半場用題目扣血，過半後會變成限時搶答！":"本關玩法："+MODEN[MODE[l]]+(l===5?"　答對往前追一步，答錯被拉開一步，追上他就抓住了！":l===10?"　把打亂的字排成正確的成語！":"　每題有倒數，越快答對傷害越高！")]]),()=>{view("main");go()})}
+  playStory(sl(cur,[["👺",CH_IN[l],"mon"],["⚔️",l===20?"最後一戰！分三階段：①追捕　②翻牌配對　③最後決戰。都沒有時間限制，慢慢想！":"本關玩法："+MODEN[MODE[l]]+(l===5?"　答對往前追一步，答錯被拉開一步，追上他就抓住了！":l===10?"　把打亂的字排成正確的成語！":"　8 張牌：成語配意思，翻錯會蓋回去，沒有時間限制！")]]),()=>{view("main");go()})}
 function OUT(l){const b=ISLANDS[cur].b,[v,c]=FLEE[cur];
   return {5:[["🗣️","我只是來試試你！下次可沒這麼輕鬆！","mon"],["💨",`${b}跳進煙霧，${v}，不見了……地上留下一片閃閃發光的字靈碎片 🧩（1/3）`]],
    10:[["🗣️","好啦好啦，我認輸了……（偷笑）","mon"],["🏃",`{n}一靠近，${b}立刻${v}溜走！只留下第二片字靈碎片 🧩（2/3）和一張紙條：「${c}」`]],
    15:[["😡","氣死我了——！你給我記住！","mon"],["🌫️",`${b}氣得跺腳，變成一團霧逃回殿裡。最後一片字靈碎片掉在地上 🧩（3/3）。三片碎片合在一起，終極殿的大門「轟」地打開了！`]]}[l]}
-const modeOf=()=>B.l===20?(B.i>=B.n/2?"rush":""):(MODE[B.l]||"");
+const modeOf=()=>B.l===20?(B.st===1?"chase":""):(MODE[B.l]||"");
 const DUM={classList:{add(){}}};
 function riverPlace(r,g,prev){
   const A=$("#arena"),H=$("#hero"),M=$("#mon");if(!A||!H||!M)return;
@@ -942,7 +943,8 @@ function battle(l,picks){
   const pool=db(cur),n=picks.length,hh=maxHp(l)+((S.buff&&S.buff.hp)||0);bgm(isBoss(l)?"boss":"battle","battle");
   // 主角血量：一般關 3 格、魔王關 4 格；妖怪血量 = 題數。一般關答錯的成語會換個問法再考，魔王關固定題數。連續答對 3 題發動「成語連擊」。
   B={l,qs:picks.map(e=>makeQ(e,pool)),i:0,hp:hh,max:hh,n,mhp:n,clear:!isBoss(l),lock:false,combo:0,fight:true,xp:0,nd:0,lv:[],cc:0,fan:has(0)?2:0,mir:has(3)?1:0,sh:(petK()==="a"?1:0)+((S.buff&&S.buff.sh)||0)};if(S.buff){toast("🎒 探索補給生效了！");S.buff=null;save()}
-  if(MODE[l]==="chase"||MODE[l]==="rush")B.clear=true;if(MODE[l]==="scr")B.qs=B.qs.map(q=>({...q,type:"scr",ans:q.e[0],opts:[]}));
+  if(l===20){B.st=1;B.clear=true}if(MODE[l]==="chase")B.clear=true;if(MODE[l]==="scr")B.qs=B.qs.map(q=>({...q,type:"scr",ans:q.e[0],opts:[]}));
+  if(MODE[l]==="match")return matchStart();
   ask();
 }
 /* ============ 各島新增劇情（第 3、8、13、18 關通過後播放）============
@@ -1070,11 +1072,11 @@ function qView(q){
 }
 function ask(){
   stopSay();
-  const I=ISLANDS[cur],q=B.qs[B.i],boss=isBoss(B.l),idx=(B.l-1-Math.floor(B.l/5))%6,chs=MODE[B.l]==="chase";
+  const I=ISLANDS[cur],q=B.qs[B.i],boss=isBoss(B.l),idx=(B.l-1-Math.floor(B.l/5))%6,chs=MODE[B.l]==="chase"||(B.l===20&&B.st===1);
   const qh=qView(q);
   const bg=chs?`background-image:url(images/chase/river.jpg);background-color:${RIVT[cur]||"transparent"};background-blend-mode:multiply;`:`background-image:linear-gradient(#0002,#0006),url(images/islands/island${cur+1}.jpg);background-size:cover;background-position:center;`;
   $("#app").innerHTML=`<div id="stage" class="card p-3">
-  <div class="font-black">第 ${B.l} 關${B.l===20?" 👺島主":boss?" 👹菁英":""}${MODE[B.l]?"　"+MODEN[MODE[B.l]]:""}${B.md==="rush"&&B.l===20?"　⏱限時搶答":""}</div>
+  <div class="font-black">第 ${B.l} 關${B.l===20?" 👺島主":boss?" 👹菁英":""}${MODE[B.l]?"　"+MODEN[MODE[B.l]]:""}${B.l===20?"　"+["","🏃第一階段・追捕","🃏第二階段","⚡第三階段・最後決戰"][B.st||3]:""}</div>
   <div id="arena" class="arena${chs?" riv":""}" style="${bg}"><div id="bh" class="bub l hidden"></div><div id="bm" class="bub r hidden"></div>
     <div class="side"><div class="${chs?"chw":""}" style="display:flex;align-items:flex-end;gap:2px">${chs?`<img id="hero" src="images/chase/hero_${S.hero||"boy"}_run.webp" alt="" style="height:clamp(86px,16vw,128px)" onerror="this.onerror=null;this.src='${hb()}'">`:`<img id="hero" src="${hb()}" alt="" style="height:${SIZE.hero}px">`}${petHtml()}${chs?`<i class="stn"></i>`:""}</div><div id="hbar">${bar(B.max,B.hp,"g")}</div><span class="nmtag">${nm()}</span></div>
     <div class="side">${chs?`<span class="chw">${mon(B.l)}<i class="stn"></i></span>`:mon(B.l)}<div id="mbar">${bar(B.n,B.mhp)}</div><span class="nmtag">${boss?I.b:LORE[cur].m[idx]}</span></div>
@@ -1092,9 +1094,8 @@ function ask(){
 const BSK=[["偷桃雷雨","🍑"],["墨汁海嘯","🌊"],["烈焰衝撞","🔥"],["幻影分身","🌫️"],["吞字大口","😋"],["算了吧之聲","🌀"]];
 const TRAIT=["","shuffle","burn","shuffle","eat","voice"];
 function traits(){
-  if(B.l===20&&B.i===B.n/2){ultBanner("第二階段・限時搶答！","⚡");const m=$("#mon");if(m)m.style.filter="drop-shadow(0 0 16px #f33) brightness(1.1)";talk("m","接下來，我要認真了！",2800)}
-  if(B.hp===1&&B.i>0&&!B.wr){B.wr=1;toast('<img src="images/chars/spirit_worry.webp" alt="" style="height:34px;display:inline-block;vertical-align:middle"> 字靈：別怕，我陪你，再試一次！')}
-  const q=B.qs[B.i],i=B.i,L=B.l,on=!B.md&&(L===20?i<B.n/2:(L>=8&&!isBoss(L)));if(!q||q.type==="scr")return;
+    if(B.hp===1&&B.i>0&&!B.wr){B.wr=1;toast('<img src="images/chars/spirit_worry.webp" alt="" style="height:34px;display:inline-block;vertical-align:middle"> 字靈：別怕，我陪你，再試一次！')}
+  const q=B.qs[B.i],i=B.i,L=B.l,on=!B.md&&(L===20?B.st===3:(L>=8&&!isBoss(L)));if(!q||q.type==="scr")return;
   const bad=()=>[...document.querySelectorAll(".opt")].filter(b=>!b.classList.contains("gone")&&b.dataset.o!==q.ans);
   const later=(ms,f)=>setTimeout(()=>{if(B&&B.i===i&&!B.lock)f()},ms);
   B.hint=later(12000,()=>{const x=bad();if(x.length>1){pk(x).classList.add("gone");toast("✨ 字靈：再想一想，我先幫你擋掉一個！")}});
@@ -1102,9 +1103,30 @@ function traits(){
   if(t==="shuffle")later(3000,()=>{const g=document.querySelector("#app .grid");if(g){shuf([...g.children]).forEach(c=>g.appendChild(c));toast(cur===1?"🌊 墨汁攪亂了選項！":"🦊 幻術換了選項位置！")}});
   if(t==="eat")later(4000,()=>{const x=bad();if(x.length>1){pk(x).classList.add("gone");toast("😋 小饕餮咕嚕～吃掉了一個選項！")}});
   if(t==="voice")later(6000,()=>{talk("m","算了吧……你不累嗎？",3200);toast("👁 「算了吧」的聲音出現了，別被它騙到！")});
-  if(t==="burn"){toast("🔥 火焰逼近！15 秒內作答");const el=$("#arena");if(el)el.insertAdjacentHTML("beforebegin",'<div class="bar" style="height:10px"><div id="tb2" style="width:100%;height:100%;background:#f55;transition:width 15s linear"></div></div>');requestAnimationFrame(()=>requestAnimationFrame(()=>{const e=$("#tb2");if(e)e.style.width="0"}));B.rt=setTimeout(()=>{if(B&&B.i===i&&!B.lock)pick(DUM,"")},15000)}
+  if(t==="burn"){if(B.fl===undefined){B.fl=0;toast("🔥 火苗：連續答對 2 題就能熄滅，+10 EXP！")}if(B.combo>0&&B.combo%2===0&&B.fl!==B.combo){B.fl=B.combo;gainXp(10);toast("🔥 火苗熄滅了！+10 EXP")}}
 }
 function weak(pool,n,ex){const w=new Set(S.wrong[cur]);return pool.filter(x=>!(ex||[]).includes(x)).map(e=>[(w.has(e[0])?-50:0)+Math.min(S.dex[e[0]]||0,6)*4+Math.random()*7,e]).sort((a,b)=>a[0]-b[0]).slice(0,n).map(x=>x[1])}
+/* ---- 翻牌配對（第 15 關、第 20 關第二階段）：沒有時間限制，翻錯就蓋回去 ---- */
+let MC=null;
+function matchStart(){
+  let es=[...new Map(B.qs.map(q=>[q.e[0],q.e])).values()].slice(0,4);if(es.length<4)es=es.concat(weak(db(cur),4-es.length,es));
+  MC={es,cards:shuf(es.flatMap((e,k)=>[{k,t:e[0],m:0},{k,t:e[1],m:1}])),open:[],done:0,miss:0,lock:false};
+  TXT="翻牌配對！找出成語和它的意思。翻錯了會蓋回去，不用急。";
+  $("#app").innerHTML=`<div class="card p-3"><div class="font-black text-xl">${B.l===20?"👺 第二階段・翻牌配對":"🃏 翻牌配對"}</div><div class="text-base">成語配意思，翻錯會蓋回去，沒有時間限制！　已配對 <b id="mcn">0</b>/4</div>
+  <div class="flex items-center gap-2 my-2"><img src="${bs(cur)}" alt="" style="height:70px"><div class="text-base">${nm()}，把成語和意思配成一對，就能抓到${ISLANDS[cur].b}！</div></div>
+  <div id="mcg" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">${MC.cards.map((c,i)=>`<button class="mc" id="mc${i}" onclick="mcFlip(${i})"></button>`).join("")}</div></div>`;
+  MC.cards.forEach((c,i)=>mcShow(i));auto(TXT)}
+function mcShow(i,peek){const c=MC.cards[i],b=$("#mc"+i);if(!b)return;const up=peek||MC.open.includes(i)||c.ok;
+  b.className="mc"+(c.ok?" ok":up?" up":"")+(c.m?" mn":"");b.textContent=up?c.t:"📜";b.disabled=!!c.ok}
+function mcFlip(i){if(!MC||MC.lock||MC.open.includes(i)||MC.cards[i].ok)return;MC.open.push(i);mcShow(i);if(MC.open.length<2)return;
+  const[a,b]=MC.open,A=MC.cards[a],C=MC.cards[b];MC.lock=true;
+  if(A.k===C.k){setTimeout(()=>{A.ok=C.ok=1;MC.open=[];MC.lock=false;MC.done++;mcShow(a);mcShow(b);$("#mcn").textContent=MC.done;sfx(660);dexAdd(MC.es[A.k][0]);toast("✅ "+MC.es[A.k][0]+"：配對成功！");
+    if(MC.done===4){toast('<img src="images/chars/spirit_happy.webp" alt="" style="height:34px;display:inline-block;vertical-align:middle"> 字靈：全部配對成功！');setTimeout(()=>{B.mhp=0;B.l===20?stage3():win()},1200)}},450)}
+  else{MC.miss++;setTimeout(()=>{MC.open=[];MC.lock=false;mcShow(a);mcShow(b);
+    if(MC.miss%4===0){toast('<img src="images/chars/spirit_worry.webp" alt="" style="height:34px;display:inline-block;vertical-align:middle"> 字靈：沒關係，我讓你偷看一下！');MC.lock=true;MC.cards.forEach((c,k)=>mcShow(k,1));setTimeout(()=>{MC.lock=false;MC.cards.forEach((c,k)=>mcShow(k))},1600)}},900)}}
+function stage(){if(B.st===1){B.st=2;matchStart()}}
+function stage3(){B.st=3;B.clear=false;B.qs=weak(db(cur),3).map(e=>makeQ(e,db(cur)));B.i=0;B.n=3;B.mhp=3;B.hp=Math.min(B.max,B.hp+1);ask();
+  setTimeout(()=>{ultBanner("第三階段・最後決戰","⚡");const m=$("#mon");if(m)m.style.filter="drop-shadow(0 0 16px #f33) brightness(1.1)";talk("m","最後了，我要認真了！",2800)},300)}
 function pick(btn,o){
   if(B.lock)return;B.lock=true;
   clearTimeout(B.rt);clearTimeout(B.hint);
@@ -1135,7 +1157,7 @@ function pick(btn,o){
   }
   if(B.md==="chase"){if(!ok){B.mhp=Math.min(B.n+3,B.mhp+1);$("#mbar").innerHTML=bar(B.n,B.mhp)}trackUp()}
   save();
-  B.timer=setTimeout(()=>{if(B.hp<=0)return lose();if(B.clear?B.mhp<=0:B.i+1>=B.n)return win();B.i++;ask()},ok?1900:4500);
+  B.timer=setTimeout(()=>{if(B.hp<=0)return lose();if(B.clear?B.mhp<=0:B.i+1>=B.n)return(B.l===20&&B.st<3)?stage():win();B.i++;ask()},ok?1900:4500);
 }
 function lose(){
   const l=B.l;B.fight=false;stopSay();TXT=`${nm()}，仙力耗盡了！錯的成語已放進錯題本，再挑戰一次吧！`;
