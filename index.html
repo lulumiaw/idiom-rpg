@@ -564,7 +564,7 @@ function sync(){au.volume=S.set.vol;if(!want||!S.set.music){au.pause();return}
 addEventListener("click",()=>{if(want&&S.set.music&&au.paused)sync()});
 
 /* ============ 語音朗讀（瀏覽器內建中文語音；四種角色各有音高、語速，並盡量分配不同聲線）============ */
-const TTS="speechSynthesis" in window,ROLES={nar:{p:1,r:.85,n:"旁白"},boy:{p:.85,r:.9,n:"小書生"},girl:{p:1.6,r:.95,n:"小仙女"},mon:{p:.3,r:.75,n:"妖怪"}},RK=["nar","boy","girl","mon"];
+const TTS="speechSynthesis" in window,ROLES={nar:{p:1,r:.85,n:"旁白"},boy:{p:.85,r:.9,n:"小書生"},girl:{p:1.6,r:.95,n:"小仙女"},girl2:{p:1.45,r:.95,n:"小錦衣"},mon:{p:.3,r:.75,n:"妖怪"}},RK=["nar","boy","girl","girl2","mon"];
 const zhV=()=>TTS?speechSynthesis.getVoices().filter(v=>/zh|cmn/i.test(v.lang)).sort((a,b)=>/TW/i.test(b.lang)-/TW/i.test(a.lang)):[];
 function vFor(r){const l=zhV();return l.find(v=>v.name===S.set.v[r])||l[RK.indexOf(r)%(l.length||1)]}
 function say(t,role,q){if(!TTS||!t)return;role=role==="hero"?(S.hero||"boy"):(role||"nar");if(!q)speechSynthesis.cancel();
@@ -580,13 +580,13 @@ function pickHero(){
   view("scene");bgm("story","lobby");tmpHero=S.hero||"";TXT="選擇你的角色，再輸入你的名字吧！";
   $("#scene").innerHTML=`<div class="scn" style="background-image:linear-gradient(#0007,#000a),url(images/world_map.jpg)"><div class="card p-4 text-center" style="max-width:640px;width:94%">
   <h2 class="text-2xl font-black">選擇你的角色</h2>
-  <div class="flex gap-3 justify-center my-3">`+[["boy","小書生"],["girl","小仙女"]].map(([k,t])=>`<button id="h_${k}" class="hbtn ${tmpHero===k?"on":""}" onclick="chooseHero('${k}')"><img src="images/chars/${k}.webp" style="height:min(30vh,220px)" alt="${t}"><div class="font-black text-xl">${t}</div></button>`).join("")+`</div>
+  <div class="flex gap-3 justify-center my-3">`+[["boy","小書生"],["girl","小仙女"],["girl2","小錦衣"]].map(([k,t])=>`<button id="h_${k}" class="hbtn ${tmpHero===k?"on":""}" onclick="chooseHero('${k}')"><img src="images/chars/${k}.webp" style="height:min(30vh,220px)" alt="${t}"><div class="font-black text-xl">${t}</div></button>`).join("")+`</div>
   <label>你的名字：<input id="nmi" maxlength="8" value="${S.name}" class="border-4 rounded-xl p-2 text-center text-2xl" style="border-color:var(--line);color:#4a2c10;background:#fff;width:180px"></label>
   <div id="msg" class="font-bold" style="color:var(--red);min-height:28px"></div>
   <div>${spk("聽說明")} <button class="btn" onclick="confirmHero()">出發！</button></div></div></div>`;
   auto(TXT);
 }
-function chooseHero(k){tmpHero=k;["boy","girl"].forEach(x=>$("#h_"+x).classList.toggle("on",x===k))}
+function chooseHero(k){tmpHero=k;["boy","girl","girl2"].forEach(x=>$("#h_"+x).classList.toggle("on",x===k))}
 function confirmHero(){
   const n=$("#nmi").value.trim();
   if(!tmpHero)return $("#msg").textContent="請先選一個角色喔！";
